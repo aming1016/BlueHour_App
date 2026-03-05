@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Travel Live - 原型预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* 首页样式 */
+        .home-screen {
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 83px;
+        }
+        
+        .header {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B35;
+        }
+        
+        .search-bar {
+            flex: 1;
+            height: 36px;
+            background: #F5F5F7;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 8px;
+            color: #9CA3AF;
+            font-size: 14px;
+        }
+        
+        .city-tags {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            overflow-x: auto;
+            background: white;
+        }
+        
+        .city-tag {
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6B7280;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        
+        .city-tag.active {
+            color: #FF6B35;
+            border-bottom: 2px solid #FF6B35;
+        }
+        
+        .section-header {
+            padding: 24px 16px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            background: red;
+            border-radius: 50%;
+        }
+        
+        .see-all {
+            color: #FF6B35;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .live-list {
+            display: flex;
+            gap: 12px;
+            padding: 0 16px;
+            overflow-x: auto;
+        }
+        
+        .live-card {
+            width: 100px;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .avatar-container {
+            position: relative;
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 8px;
+        }
+        
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
+        .live-badge {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: red;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .username {
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .location {
+            font-size: 10px;
+            color: #6B7280;
+        }
+        
+        .viewers {
+            font-size: 10px;
+            color: #9CA3AF;
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 16px;
+        }
+        
+        .video-card {
+            cursor: pointer;
+        }
+        
+        .video-thumbnail {
+            aspect-ratio: 9/16;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .likes-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .video-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .video-meta {
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 4px;
+        }
+        
+        /* 底部导航 */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 83px;
+            background: white;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            padding-top: 8px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #6B7280;
+            font-size: 10px;
+        }
+        
+        .nav-item.active {
+            color: #FF6B35;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+        }
+        
+        .nav-center {
+            width: 56px;
+            height: 56px;
+            background: #FF6B35;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            margin-top: -20px;
+            box-shadow: 0 4px 12px rgba(255,107,53,0.4);
+            cursor: pointer;
+        }
+        
+        /* 直播间样式 */
+        .live-room {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1a1a2e;
+            display: none;
+            z-index: 100;
+        }
+        
+        .live-room.active {
+            display: block;
+        }
+        
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+        
+        .live-overlay-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            padding: 44px 16px 16px;
+        }
+        
+        .live-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: white;
+        }
+        
+        .back-btn {
+            cursor: pointer;
+            font-size: 24px;
+        }
+        
+        .host-name {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .live-overlay-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 300px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+        
+        .host-info {
+            position: absolute;
+            left: 16px;
+            bottom: 100px;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 12px;
+            color: white;
+        }
+        
+        .host-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .host-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: 2px solid white;
+        }
+        
+        .follow-btn {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .comments-section {
+            position: absolute;
+            right: 16px;
+            bottom: 200px;
+            width: 200px;
+        }
+        
+        .comment {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .comment-user {
+            color: #FF6B35;
+            font-weight: 600;
+        }
+        
+        .live-controls {
+            position: absolute;
+            bottom: 24px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .comment-input {
+            flex: 1;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+        }
+        
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* 开播弹窗 */
+        .go-live-modal {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70%;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            display: none;
+            z-index: 200;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .go-live-modal.active {
+            display: block;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: #E5E7EB;
+            border-radius: 2px;
+            margin: 0 auto 24px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .camera-preview {
+            width: 200px;
+            height: 200px;
+            background: #F5F5F7;
+            border-radius: 12px;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+        
+        .input-field {
+            width: 100%;
+            height: 48px;
+            background: #F5F5F7;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            color: #6B7280;
+        }
+        
+        .start-live-btn {
+            width: 100%;
+            height: 56px;
+            background: #FF6B35;
+            color: white;
+            border: none;
+            border-radius: 28px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255,107,53,0.4);
+        }
+        
+        /* 遮罩层 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 150;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="screen">
+            <!-- 首页 -->
+            <div class="home-screen" id="homeScreen">
+                <div class="header">
+                    <div class="logo">TravelLive</div>
+                    <div class="search-bar">
+                        <span>🔍</span>
+                        <span>Search live streams...</span>
+                    </div>
+                    <span>🔔</span>
+                </div>
+                
+                <div class="city-tags">
+                    <div class="city-tag active">🇨🇳 北京</div>
+                    <div class="city-tag">🇯🇵 东京</div>
+                    <div class="city-tag">🇰🇷 首尔</div>
+                    <div class="city-tag">🇹🇭 曼谷</div>
+                    <div class="city-tag">🇺🇸 纽约</div>
+                </div>
+                
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="live-indicator"></span>
+                        LIVE NOW
+                    </div>
+                    <span class="see-all">See All ></span>
+                </div>
+                
+                <div class="live-list">
+                    <div class="live-card" onclick="enterLiveRoom()">
+                        <div class="avatar-container">
+                            <div class="avatar">👤</div>
+                            <div class="live-badge"></div>
+                        </div>
+                        <div class="username">@tour_guide_li</div>
+                        <div class="location">📍 北京</div>
+                        <div class="viewers">👥 1.2k</div>
+                    </div>
+                    <div class="live-card" onclick="enterLiveRoom()">
+                        <div class="avatar-container">
+                            <div class="avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">👤</div>
+                            <div class="live-badge"></div>
+                        </div>
+                        <div class="username">@sichuan_foodie</div>
+                        <div class="location">📍 成都</div>
+                        <div class="viewers">👥 890</div>
+                    </div>
+                    <div class="live-card" onclick="enterLiveRoom()">
+                        <div class="avatar-container">
+                            <div class="avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">👤</div>
+                            <div class="live-badge"></div>
+                        </div>
+                        <div class="username">@xi_an_walker</div>
+                        <div class="location">📍 西安</div>
+                        <div class="viewers">👥 567</div>
+                    </div>
+                    <div class="live-card" onclick="enterLiveRoom()">
+                        <div class="avatar-container">
+                            <div class="avatar" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">👤</div>
+                            <div class="live-badge"></div>
+                        </div>
+                        <div class="username">@hangzhou_views</div>
+                        <div class="location">📍 杭州</div>
+                        <div class="viewers">👥 432</div>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    <div class="section-title">
+                        <span>✨</span>
+                        Trending
+                    </div>
+                    <span class="see-all">See All ></span>
+                </div>
+                
+                <div class="video-grid">
+                    <div class="video-card">
+                        <div class="video-thumbnail">
+                            <div class="likes-badge">❤️ 1.2k</div>
+                        </div>
+                        <div class="video-title">Amazing street food in Chengdu!</div>
+                        <div class="video-meta">@foodie_traveler · 2h ago</div>
+                    </div>
+                    <div class="video-card">
+                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <div class="likes-badge">❤️ 890</div>
+                        </div>
+                        <div class="video-title">Hidden gems of Beijing hutongs</div>
+                        <div class="video-meta">@beijing_walker · 4h ago</div>
+                    </div>
+                    <div class="video-card">
+                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <div class="likes-badge">❤️ 756</div>
+                        </div>
+                        <div class="video-title">Shanghai night life tour</div>
+                        <div class="video-meta">@night_owl · 5h ago</div>
+                    </div>
+                    <div class="video-card">
+                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <div class="likes-badge">❤️ 643</div>
+                        </div>
+                        <div class="video-title">Temple visit in Xi'an</div>
+                        <div class="video-meta">@history_buff · 6h ago</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部导航 -->
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">🔍</span>
+                    <span>Discover</span>
+                </div>
+                <div class="nav-center" onclick="showGoLive()">➕</div>
+                <div class="nav-item">
+                    <span class="nav-icon">💬</span>
+                    <span>Chat</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>Me</span>
+                </div>
+            </div>
+            
+            <!-- 直播间 -->
+            <div class="live-room" id="liveRoom">
+                <div class="video-background">📹</div>
+                <div class="live-overlay-top">
+                    <div class="live-header">
+                        <span class="back-btn" onclick="exitLiveRoom()">←</span>
+                        <span class="host-name">@tour_guide_li</span>
+                        <span>⋮</span>
+                        <span>分享</span>
+                    </div>
+                </div>
+                <div class="live-overlay-bottom"></div>
+                <div class="host-info">
+                    <div class="host-row">
+                        <div class="host-avatar"></div>
+                        <div>
+                            <div style="font-weight: 600;">@tour_guide_li</div>
+                            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">⭐ 4.9 (128 reviews)</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin: 8px 0;">
+                        <div>📍 Beijing · Forbidden City</div>
+                        <div>👥 1,234 watching</div>
+                    </div>
+                    <button class="follow-btn">+ Follow</button>
+                </div>
+                <div class="comments-section">
+                    <div class="comment"><span class="comment-user">User123:</span> Amazing!</div>
+                    <div class="comment"><span class="comment-user">User456:</span> Where is this?</div>
+                    <div class="comment"><span class="comment-user">User789:</span> Sent a ❤️</div>
+                    <div class="comment"><span class="comment-user">Traveler_X:</span> Beautiful view!</div>
+                </div>
+                <div class="live-controls">
+                    <div class="comment-input">💬 Say something...</div>
+                    <div class="control-btn">🎁</div>
+                    <div class="control-btn">❤️</div>
+                </div>
+            </div>
+            
+            <!-- 遮罩层 -->
+            <div class="overlay" id="overlay" onclick="hideGoLive()"></div>
+            
+            <!-- 开播弹窗 -->
+            <div class="go-live-modal" id="goLiveModal">
+                <div class="modal-handle"></div>
+                <div class="modal-title">Go Live</div>
+                <div class="camera-preview">📹</div>
+                <div class="input-field">
+                    <span>📝</span>
+                    <span>Add title...</span>
+                </div>
+                <div class="input-field">
+                    <span>📍</span>
+                    <span>Add location...</span>
+                </div>
+                <button class="start-live-btn">🔴 START LIVE</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function enterLiveRoom() {
+            document.getElementById('liveRoom').classList.add('active');
+        }
+        
+        function exitLiveRoom() {
+            document.getElementById('liveRoom').classList.remove('active');
+        }
+        
+        function showGoLive() {
+            document.getElementById('goLiveModal').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+        }
+        
+        function hideGoLive() {
+            document.getElementById('goLiveModal').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+        
+        // 城市标签切换
+        document.querySelectorAll('.city-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.city-tag').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
