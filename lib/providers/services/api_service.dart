@@ -156,4 +156,36 @@ class ApiService {
       return null;
     }
   }
+  
+  /// 切换关注状态
+  Future<bool> toggleFollow(String userId, bool follow) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/api/follow/$userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'follow': follow}),
+      ).timeout(const Duration(seconds: 10));
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  /// 检查关注状态
+  Future<bool> checkFollowStatus(String userId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl/api/follow/$userId/status'),
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['isFollowing'] ?? false;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
 }

@@ -240,7 +240,7 @@ class AppState extends ChangeNotifier {
   /// 加载余额（API）
   Future<void> loadBalance() async {
     final balance = await _api.getBalance();
-    if (balance > 0) {
+    if (balance != null && balance > 0) {
       _balance = balance;
       notifyListeners();
     }
