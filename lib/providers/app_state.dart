@@ -9,6 +9,7 @@ class LiveStream {
   final String avatarUrl;
   final bool isLive;
   final String title;
+  final String thumbnail;
 
   LiveStream({
     required this.id,
@@ -18,6 +19,7 @@ class LiveStream {
     required this.avatarUrl,
     this.isLive = true,
     this.title = '',
+    this.thumbnail = '',
   });
 
   /// 从API数据创建
@@ -30,6 +32,7 @@ class LiveStream {
       viewers: data['viewers']?.toString() ?? '0',
       avatarUrl: data['streamerAvatar'] ?? '',
       isLive: data['isLive'] ?? true,
+      thumbnail: data['thumbnail'] ?? '',
     );
   }
 }
@@ -106,7 +109,45 @@ class AppState extends ChangeNotifier {
   double _balance = 256.0;
 
   // ========== API数据 ==========
-  List<LiveStream> _liveStreams = [];
+  List<LiveStream> _liveStreams = [
+    // 默认模拟数据，API连接成功后会替换
+    LiveStream(
+      id: '1',
+      title: '🏛️ 故宫深度游',
+      username: '@北京导游小李',
+      location: '北京 · 故宫',
+      viewers: '1.2k',
+      avatarUrl: '',
+      isLive: true,
+    ),
+    LiveStream(
+      id: '2',
+      title: '🐼 熊猫基地实况',
+      username: '@成都吃货王',
+      location: '成都 · 大熊猫基地',
+      viewers: '856',
+      avatarUrl: '',
+      isLive: true,
+    ),
+    LiveStream(
+      id: '3',
+      title: '🌃 外滩夜景',
+      username: '@上海夜行者',
+      location: '上海 · 外滩',
+      viewers: '2.3k',
+      avatarUrl: '',
+      isLive: true,
+    ),
+    LiveStream(
+      id: '4',
+      title: '🍜 西安回民街美食',
+      username: '@西安美食家',
+      location: '西安 · 回民街',
+      viewers: '634',
+      avatarUrl: '',
+      isLive: true,
+    ),
+  ];
   List<Comment> _comments = [];
   bool _isLoading = false;
   bool _apiConnected = false;
