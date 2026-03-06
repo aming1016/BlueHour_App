@@ -16,8 +16,6 @@ class WalletScreen extends StatelessWidget {
       ),
       body: Consumer<AppState>(
         builder: (context, appState, child) {
-          final user = appState.currentUser;
-          
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -47,7 +45,7 @@ class WalletScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '\$${user?.balance.toStringAsFixed(2) ?? '0.00'}',
+                        '\$${appState.balance.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 36,
@@ -75,7 +73,7 @@ class WalletScreen extends StatelessWidget {
                     Expanded(
                       child: _buildStatCard(
                         '今日收益',
-                        '\$${user?.todayEarnings.toStringAsFixed(2) ?? '0.00'}',
+                        '\$0.00',
                         Icons.today,
                       ),
                     ),
@@ -83,7 +81,7 @@ class WalletScreen extends StatelessWidget {
                     Expanded(
                       child: _buildStatCard(
                         '累计收益',
-                        '\$${user?.totalEarnings.toStringAsFixed(2) ?? '0.00'}',
+                        '\$${appState.totalEarnings.toStringAsFixed(2)}',
                         Icons.account_balance_wallet,
                       ),
                     ),
