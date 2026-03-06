@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import 'live_room_screen.dart';
 
 /// Visily生成的首页设计 - NewHomeScreen
 /// 基于2026-03-05设计图实现
@@ -205,7 +206,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildStreamCard(stream) {
     return GestureDetector(
       onTap: () {
-        // TODO: 导航到直播间
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LiveRoomScreen(streamId: stream.id),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
