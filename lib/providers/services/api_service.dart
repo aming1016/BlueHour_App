@@ -9,12 +9,15 @@ class ApiService {
   
   /// 健康检查
   Future<bool> healthCheck() async {
+    print('🌐 健康检查: $baseUrl/api/health');
     try {
       final response = await _client.get(
         Uri.parse('$baseUrl/api/health'),
       ).timeout(const Duration(seconds: 5));
+      print('📡 健康检查状态: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('❌ 健康检查失败: $e');
       return false;
     }
   }
