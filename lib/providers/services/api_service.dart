@@ -21,17 +21,24 @@ class ApiService {
   
   /// 获取直播列表
   Future<List<Map<String, dynamic>>> getStreams() async {
+    print('🌐 请求API: $baseUrl/api/streams');
     try {
       final response = await _client.get(
         Uri.parse('$baseUrl/api/streams'),
       ).timeout(const Duration(seconds: 10));
       
+      print('📡 响应状态码: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['data'] ?? []);
+        final streams = List<Map<String, dynamic>>.from(data['data'] ?? []);
+        print('✅ 获取到 ${streams.length} 条直播数据');
+        return streams;
       }
+      print('❌ 响应异常: ${response.body}');
       return [];
     } catch (e) {
+      print('❌ 请求失败: $e');
       return [];
     }
   }
