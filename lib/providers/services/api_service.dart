@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // 本地开发服务器地址
-  static const String baseUrl = 'http://localhost:80';
+  // 后端服务器地址（虚拟机部署）
+  static const String baseUrl = 'http://192.168.124.9:3000';
   
   final http.Client _client = http.Client();
   
@@ -28,7 +28,7 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['streams'] ?? []);
+        return List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
       return [];
     } catch (e) {
@@ -61,7 +61,7 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['comments'] ?? []);
+        return List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
       return [];
     } catch (e) {
@@ -96,7 +96,7 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['gifts'] ?? []);
+        return List<Map<String, dynamic>>.from(data['data'] ?? []);
       }
       return [];
     } catch (e) {
@@ -149,7 +149,7 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['balance']?.toDouble();
+        return data['data']?['balance']?.toDouble();
       }
       return null;
     } catch (e) {
