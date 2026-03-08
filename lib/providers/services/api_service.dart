@@ -199,7 +199,7 @@ class ApiService {
     }
   }
   
-  // ==================== 用户认证模块 ====================
+  // ==================== 用户认证模块（V1.2新增）====================
   
   /// 用户注册
   Future<Map<String, dynamic>?> register(String email, String password, String username) async {
@@ -286,8 +286,6 @@ class ApiService {
     }
   }
   
-  // ==================== 主播认证模块 ====================
-
   /// 申请主播认证
   Future<Map<String, dynamic>?> applyVerification(String token, Map<String, dynamic> data) async {
     try {
@@ -299,7 +297,7 @@ class ApiService {
         },
         body: jsonEncode(data),
       ).timeout(const Duration(seconds: 10));
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -309,7 +307,7 @@ class ApiService {
       return null;
     }
   }
-
+  
   /// 获取认证状态
   Future<Map<String, dynamic>?> getVerificationStatus(String token) async {
     try {
@@ -319,7 +317,7 @@ class ApiService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -329,9 +327,7 @@ class ApiService {
       return null;
     }
   }
-
-  // ==================== 直播模块 ====================
-
+  
   /// 创建直播间
   Future<Map<String, dynamic>?> createStream(String token, {
     required String title,
@@ -351,7 +347,7 @@ class ApiService {
           'category': category,
         }),
       ).timeout(const Duration(seconds: 10));
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -361,7 +357,7 @@ class ApiService {
       return null;
     }
   }
-
+  
   /// 结束直播
   Future<Map<String, dynamic>?> endStream(String token, String streamId) async {
     try {
@@ -375,7 +371,7 @@ class ApiService {
           'stream_id': streamId,
         }),
       ).timeout(const Duration(seconds: 10));
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -385,182 +381,20 @@ class ApiService {
       return null;
     }
   }
-
+  
   /// 获取直播间信息
   Future<Map<String, dynamic>?> getStreamInfo(String streamId) async {
     try {
       final response = await _client.get(
         Uri.parse('$baseUrl/api/streams/$streamId/info'),
       ).timeout(const Duration(seconds: 10));
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
       return null;
     } catch (e) {
       print('❌ 获取直播间信息失败: $e');
-      return null;
-    }
-  }
-  
-  // ==================== 用户认证模块（V1.2新增）====================
-  
-  /// 用户注册
-  Future<Map<String, dynamic>?> register(String email, String password, String username) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'username': username,
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 注册失败: $e');
-      return null;
-    }
-  }
-  
-  /// 用户登录
-  Future<Map<String, dynamic>?> login(String email, String password) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 登录失败: $e');
-      return null;
-    }
-  }
-  
-  /// 获取当前用户信息
-  Future<Map<String, dynamic>?> getCurrentUser(String token) async {
-    try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/api/auth/me'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-  
-  /// 申请主播认证
-  Future<Map<String, dynamic>?> applyVerification(String token, Map<String, dynamic> data) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/users/verification'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(data),
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 申请认证失败: $e');
-      return null;
-    }
-  }
-  
-  /// 获取认证状态
-  Future<Map<String, dynamic>?> getVerificationStatus(String token) async {
-    try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/api/users/verification/status'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 获取认证状态失败: $e');
-      return null;
-    }
-  }
-  
-  /// 创建直播间
-  Future<Map<String, dynamic>?> createStream(String token, {
-    required String title,
-    String? location,
-    String? category,
-  }) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/streams/create'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'title': title,
-          'location': location,
-          'category': category,
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 创建直播间失败: $e');
-      return null;
-    }
-  }
-  
-  /// 结束直播
-  Future<Map<String, dynamic>?> endStream(String token, String streamId) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/streams/end'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'stream_id': streamId,
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('❌ 结束直播失败: $e');
       return null;
     }
   }
