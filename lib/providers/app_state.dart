@@ -99,6 +99,11 @@ class LiveRecord {
 class AppState extends ChangeNotifier {
   final ApiService _api = ApiService();
   
+  // ========== 用户认证数据 ==========
+  String? _token;
+  String? _currentUserId;
+  bool _isLoggedIn = false;
+  
   // ========== 用户数据 ==========
   String _username = '@tour_guide_li';
   String _bio = '🌍 Traveler · Beijing';
@@ -391,5 +396,194 @@ class AppState extends ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  // ========== 用户认证方法 ==========
+
+  /// 是否已登录
+  bool get isLoggedIn => _isLoggedIn;
+
+  /// 当前用户token
+  String? get token => _token;
+
+  /// 当前用户ID
+  String? get currentUserId => _currentUserId;
+
+  /// 用户注册
+  Future<Map<String, dynamic>> register(String email, String password, String username) async {
+    try {
+      final response = await _api.register(email, password, username);
+      
+      if (response != null && response['code'] == 0) {
+        final data = response['data'];
+        _token = data['token'];
+        _currentUserId = data['user']['id'];
+        _isLoggedIn = true;
+        
+        // 更新用户信息
+        final user = data['user'];
+        _username = user['username'] ?? username;
+        
+        notifyListeners();
+        return {'success': true, 'message': '注册成功'};
+      } else {
+        return {'success': false, 'message': response?['message'] ?? '注册失败'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': '网络错误：$e'};
+    }
+  }
+
+  /// 用户登录
+  Future<bool> login(String email, String password) async {
+    try {
+      final response = await _api.login(email, password);
+      
+      if (response != null && response['code'] == 0) {
+        final data = response['data'];
+        _token = data['token'];
+        _currentUserId = data['user']['id'];
+        _isLoggedIn = true;
+        
+        // 更新用户信息
+        final user = data['user'];
+        _username = user['username'] ?? '';
+        _followers = user['followers_count'] ?? 0;
+        _following = user['following_count'] ?? 0;
+        _totalLives = user['total_lives'] ?? 0;
+        _totalEarnings = user['total_earnings']?.toDouble() ?? 0.0;
+        
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('登录错误: $e');
+      return false;
+    }
+  }
+
+  /// 用户登出
+  Future<void> logout() async {
+    _token = null;
+    _currentUserId = null;
+    _isLoggedIn = false;
+    _username = '';
+    notifyListeners();
+  }
+
+  /// 获取当前用户信息
+  Future<void> fetchCurrentUser() async {
+    if (_token == null) return;
+    
+    try {
+      final response = await _api.getCurrentUser(_token!);
+      if (response != null && response['code'] == 0) {
+        final user = response['data'];
+        _username = user['username'] ?? '';
+        _followers = user['followers_count'] ?? 0;
+        _following = user['following_count'] ?? 0;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('获取用户信息失败: $e');
+    }
+  }
+
+  // ========== 主播认证方法 ==========
+
+  /// 申请主播认证
+  Future<Map<String, dynamic>> applyVerification(Map<String, dynamic> data) async {
+    if (_token == null) {
+      return {'success': false, 'message': '请先登录'};
+    }
+    
+    try {
+      final response = await _api.applyVerification(_token!, data);
+      
+      if (response != null && response['code'] == 0) {
+        return {'success': true, 'message': '申请已提交'};
+      } else {
+        return {'success': false, 'message': response?['message'] ?? '申请失败'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': '网络错误：$e'};
+    }
+  }
+
+  /// 获取认证状态
+  Future<Map<String, dynamic>> getVerificationStatus() async {
+    if (_token == null) {
+      return {'verification_status': 'none'};
+    }
+
+    try {
+      final response = await _api.getVerificationStatus(_token!);
+      if (response != null && response['code'] == 0) {
+        return response['data'] ?? {'verification_status': 'none'};
+      }
+      return {'verification_status': 'none'};
+    } catch (e) {
+      print('获取认证状态失败: $e');
+      return {'verification_status': 'none'};
+    }
+  }
+
+  // ========== 直播方法 ==========
+
+  /// 创建直播间
+  Future<Map<String, dynamic>> createStream({
+    required String title,
+    String? location,
+    String? category,
+  }) async {
+    if (_token == null) {
+      return {'success': false, 'message': '请先登录'};
+    }
+
+    try {
+      final response = await _api.createStream(
+        _token!,
+        title: title,
+        location: location,
+        category: category,
+      );
+
+      if (response != null && response['code'] == 0) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': response?['message'] ?? '创建失败',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': '网络错误：$e'};
+    }
+  }
+
+  /// 结束直播
+  Future<Map<String, dynamic>> endStream(String streamId) async {
+    if (_token == null) {
+      return {'success': false, 'message': '请先登录'};
+    }
+
+    try {
+      final response = await _api.endStream(_token!, streamId);
+
+      if (response != null && response['code'] == 0) {
+        return {'success': true, 'data': response['data']};
+      } else {
+        return {
+          'success': false,
+          'message': response?['message'] ?? '结束失败',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': '网络错误：$e'};
+    }
   }
 }
