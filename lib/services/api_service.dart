@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 
 /// API服务类 - 封装所有后端接口调用
 class ApiService {
-  // 开发环境基础URL
-  static const String baseUrl = 'http://localhost:3000';
+  // 开发环境基础URL（虚拟机）
+  static const String baseUrl = 'http://192.168.31.249:3000';
   
   // 单例模式
   static final ApiService _instance = ApiService._internal();
