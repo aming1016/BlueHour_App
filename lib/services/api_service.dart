@@ -161,4 +161,42 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== 首页模块 ====================
+
+  /// 获取Banner列表
+  Future<List<dynamic>> getBanners() async {
+    final response = await _get('/api/banners');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取关注的主播列表
+  Future<List<dynamic>> getFollowedStreamers() async {
+    final response = await _get('/api/followed-streamers');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取混合内容流
+  Future<List<dynamic>> getMixedContent({String filter = 'recommend', int limit = 20}) async {
+    final response = await _get('/api/mixed-content?filter=$filter&limit=$limit');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取快捷入口配置
+  Future<List<dynamic>> getQuickEntries() async {
+    final response = await _get('/api/quick-entries');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
 }

@@ -261,145 +261,19 @@ class AppState extends ChangeNotifier {
     },
   ];
 
-  // ========== P0: 首页新数据 ==========
+  // ========== P0: 首页新数据（从API获取）==========
   
   /// Banner 轮播数据
-  final List<BannerItem> _banners = [
-    BannerItem(
-      id: '1',
-      imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800',
-      title: '🎉 新人开播奖励翻倍！',
-      actionType: 'task',
-      actionUrl: '/tasks',
-    ),
-    BannerItem(
-      id: '2',
-      imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800',
-      title: '📍 探索北京胡同文化',
-      actionType: 'live',
-      actionUrl: '/live/beijing',
-    ),
-    BannerItem(
-      id: '3',
-      imageUrl: 'https://images.unsplash.com/photo-1537531383496-f4749b8032cf?w=800',
-      title: '💰 今日最高收益 $1,234',
-      actionType: 'web',
-      actionUrl: '/ranking',
-    ),
-  ];
+  List<BannerItem> _banners = [];
 
   /// 快捷入口
-  final List<QuickEntry> _quickEntries = [
-    QuickEntry(id: '1', icon: '📍', label: '附近', filter: 'nearby'),
-    QuickEntry(id: '2', icon: '🔥', label: '热门', filter: 'hot'),
-    QuickEntry(id: '3', icon: '⭐', label: '新人', filter: 'new'),
-    QuickEntry(id: '4', icon: '🎯', label: '推荐', filter: 'recommend'),
-    QuickEntry(id: '5', icon: '🎁', label: '活动', filter: 'activity'),
-  ];
+  List<QuickEntry> _quickEntries = [];
 
   /// 关注的主播列表
-  final List<Map<String, dynamic>> _followedStreamers = [
-    {
-      'id': '1',
-      'username': '北京导游小李',
-      'avatar': '',
-      'isLive': true,
-      'title': '🏛️ 故宫深度游',
-      'viewers': '1.2k',
-    },
-    {
-      'id': '2',
-      'username': '成都吃货王',
-      'avatar': '',
-      'isLive': true,
-      'title': '🐼 熊猫基地实况',
-      'viewers': '856',
-    },
-    {
-      'id': '3',
-      'username': '上海夜行者',
-      'avatar': '',
-      'isLive': false,
-      'lastLive': '2小时前',
-    },
-    {
-      'id': '4',
-      'username': '西安美食家',
-      'avatar': '',
-      'isLive': true,
-      'title': '🍜 回民街美食',
-      'viewers': '634',
-    },
-    {
-      'id': '5',
-      'username': '杭州西湖妹',
-      'avatar': '',
-      'isLive': false,
-      'lastLive': '昨天',
-    },
-  ];
+  List<Map<String, dynamic>> _followedStreamers = [];
 
   /// 混合内容流（直播+回放+视频）
-  final List<MixedContent> _mixedContent = [
-    MixedContent(
-      id: '1',
-      type: ContentType.live,
-      title: '🏛️ 故宫深度游，带你穿越六百年',
-      author: '@北京导游小李',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400',
-      viewers: '1.2k',
-      isLive: true,
-      location: '北京',
-    ),
-    MixedContent(
-      id: '2',
-      type: ContentType.video,
-      title: '成都街头小吃攻略，人均20吃到撑',
-      author: '@成都吃货王',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400',
-      likes: '2.3k',
-      duration: '03:45',
-    ),
-    MixedContent(
-      id: '3',
-      type: ContentType.live,
-      title: '🌃 外滩夜景直播',
-      author: '@上海夜行者',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?w=400',
-      viewers: '2.3k',
-      isLive: true,
-      location: '上海',
-    ),
-    MixedContent(
-      id: '4',
-      type: ContentType.replay,
-      title: '西安城墙骑行全记录',
-      author: '@西安美食家',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?w=400',
-      viewers: '5.6k',
-      duration: '45:20',
-      isLive: false,
-    ),
-    MixedContent(
-      id: '5',
-      type: ContentType.video,
-      title: '西湖十景最佳拍摄点',
-      author: '@杭州西湖妹',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1598887142487-3c854d51eabb?w=400',
-      likes: '1.8k',
-      duration: '02:30',
-    ),
-    MixedContent(
-      id: '6',
-      type: ContentType.live,
-      title: '张家界玻璃栈道挑战',
-      author: '@冒险达人',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1513415564515-763d91423bdd?w=400',
-      viewers: '3.1k',
-      isLive: true,
-      location: '张家界',
-    ),
-  ];
+  List<MixedContent> _mixedContent = [];
 
   // ========== Getters ==========
   String get username => _username;
@@ -437,10 +311,95 @@ class AppState extends ChangeNotifier {
       await Future.wait([
         loadStreams(),
         loadBalance(),
+        loadHomepageData(), // 加载首页数据
       ]);
     }
     
     _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 加载首页所有数据
+  Future<void> loadHomepageData() async {
+    await Future.wait([
+      loadBanners(),
+      loadQuickEntries(),
+      loadFollowedStreamers(),
+      loadMixedContent(),
+    ]);
+  }
+
+  /// 加载Banner数据
+  Future<void> loadBanners() async {
+    final data = await _api.getBanners();
+    _banners = data.map((b) => BannerItem(
+      id: b['id'] ?? '',
+      imageUrl: b['imageUrl'] ?? '',
+      title: b['title'] ?? '',
+      actionType: b['actionType'],
+      actionUrl: b['actionUrl'],
+    )).toList();
+    notifyListeners();
+  }
+
+  /// 加载快捷入口
+  Future<void> loadQuickEntries() async {
+    final data = await _api.getQuickEntries();
+    _quickEntries = data.map((e) => QuickEntry(
+      id: e['id'] ?? '',
+      icon: e['icon'] ?? '',
+      label: e['label'] ?? '',
+      filter: e['filter'],
+    )).toList();
+    notifyListeners();
+  }
+
+  /// 加载关注的主播列表
+  Future<void> loadFollowedStreamers() async {
+    final data = await _api.getFollowedStreamers();
+    _followedStreamers = data.map((s) => {
+      'id': s['id'] ?? '',
+      'username': s['username'] ?? '',
+      'avatar': s['avatar'] ?? '',
+      'isLive': s['isLive'] ?? false,
+      'title': s['title'] ?? '',
+      'viewers': s['viewers'] ?? '0',
+      'streamId': s['streamId'] ?? '',
+    }).toList();
+    notifyListeners();
+  }
+
+  /// 加载混合内容流
+  Future<void> loadMixedContent({String filter = 'recommend'}) async {
+    final data = await _api.getMixedContent(filter: filter);
+    _mixedContent = data.map((c) {
+      ContentType type;
+      switch (c['type']) {
+        case 'live':
+          type = ContentType.live;
+          break;
+        case 'replay':
+          type = ContentType.replay;
+          break;
+        case 'video':
+        default:
+          type = ContentType.video;
+          break;
+      }
+      
+      return MixedContent(
+        id: c['id'] ?? '',
+        type: type,
+        title: c['title'] ?? '',
+        author: c['author'] ?? '',
+        thumbnailUrl: c['thumbnailUrl'] ?? '',
+        viewers: c['viewers'],
+        duration: c['duration'],
+        likes: c['likes'],
+        isLive: c['isLive'] ?? false,
+        location: c['location'],
+      );
+    }).toList();
     notifyListeners();
   }
 
