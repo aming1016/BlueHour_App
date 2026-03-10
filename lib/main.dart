@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
 import 'screens/home_screen.dart';
+import 'screens/new_home_screen.dart';
 import 'screens/discover_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/wallet_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 创建AppState并初始化
+  final appState = AppState();
+  await appState.initialize();
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppState(),
+    ChangeNotifierProvider.value(
+      value: appState,
       child: const TravelApp(),
     ),
   );
@@ -49,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const HomeScreen(),
+    const NewHomeScreen(), // Visily设计的新首页
     const DiscoverScreen(),
     const SizedBox(), // Placeholder for center button
     const WalletScreen(),
