@@ -55,6 +55,68 @@ class VideoPost {
   });
 }
 
+/// Banner 数据模型
+class BannerItem {
+  final String id;
+  final String imageUrl;
+  final String title;
+  final String? actionType; // 'web', 'live', 'task'
+  final String? actionUrl;
+
+  BannerItem({
+    required this.id,
+    required this.imageUrl,
+    required this.title,
+    this.actionType,
+    this.actionUrl,
+  });
+}
+
+/// 快捷入口数据模型
+class QuickEntry {
+  final String id;
+  final String icon;
+  final String label;
+  final String? filter;
+
+  QuickEntry({
+    required this.id,
+    required this.icon,
+    required this.label,
+    this.filter,
+  });
+}
+
+/// 混合内容项类型
+enum ContentType { live, replay, video }
+
+/// 混合内容流数据模型
+class MixedContent {
+  final String id;
+  final ContentType type;
+  final String title;
+  final String author;
+  final String thumbnailUrl;
+  final String? viewers;
+  final String? duration;
+  final String? likes;
+  final bool isLive;
+  final String? location;
+
+  MixedContent({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.author,
+    required this.thumbnailUrl,
+    this.viewers,
+    this.duration,
+    this.likes,
+    this.isLive = false,
+    this.location,
+  });
+}
+
 class Comment {
   final String username;
   final String text;
@@ -199,6 +261,146 @@ class AppState extends ChangeNotifier {
     },
   ];
 
+  // ========== P0: 首页新数据 ==========
+  
+  /// Banner 轮播数据
+  final List<BannerItem> _banners = [
+    BannerItem(
+      id: '1',
+      imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800',
+      title: '🎉 新人开播奖励翻倍！',
+      actionType: 'task',
+      actionUrl: '/tasks',
+    ),
+    BannerItem(
+      id: '2',
+      imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800',
+      title: '📍 探索北京胡同文化',
+      actionType: 'live',
+      actionUrl: '/live/beijing',
+    ),
+    BannerItem(
+      id: '3',
+      imageUrl: 'https://images.unsplash.com/photo-1537531383496-f4749b8032cf?w=800',
+      title: '💰 今日最高收益 $1,234',
+      actionType: 'web',
+      actionUrl: '/ranking',
+    ),
+  ];
+
+  /// 快捷入口
+  final List<QuickEntry> _quickEntries = [
+    QuickEntry(id: '1', icon: '📍', label: '附近', filter: 'nearby'),
+    QuickEntry(id: '2', icon: '🔥', label: '热门', filter: 'hot'),
+    QuickEntry(id: '3', icon: '⭐', label: '新人', filter: 'new'),
+    QuickEntry(id: '4', icon: '🎯', label: '推荐', filter: 'recommend'),
+    QuickEntry(id: '5', icon: '🎁', label: '活动', filter: 'activity'),
+  ];
+
+  /// 关注的主播列表
+  final List<Map<String, dynamic>> _followedStreamers = [
+    {
+      'id': '1',
+      'username': '北京导游小李',
+      'avatar': '',
+      'isLive': true,
+      'title': '🏛️ 故宫深度游',
+      'viewers': '1.2k',
+    },
+    {
+      'id': '2',
+      'username': '成都吃货王',
+      'avatar': '',
+      'isLive': true,
+      'title': '🐼 熊猫基地实况',
+      'viewers': '856',
+    },
+    {
+      'id': '3',
+      'username': '上海夜行者',
+      'avatar': '',
+      'isLive': false,
+      'lastLive': '2小时前',
+    },
+    {
+      'id': '4',
+      'username': '西安美食家',
+      'avatar': '',
+      'isLive': true,
+      'title': '🍜 回民街美食',
+      'viewers': '634',
+    },
+    {
+      'id': '5',
+      'username': '杭州西湖妹',
+      'avatar': '',
+      'isLive': false,
+      'lastLive': '昨天',
+    },
+  ];
+
+  /// 混合内容流（直播+回放+视频）
+  final List<MixedContent> _mixedContent = [
+    MixedContent(
+      id: '1',
+      type: ContentType.live,
+      title: '🏛️ 故宫深度游，带你穿越六百年',
+      author: '@北京导游小李',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400',
+      viewers: '1.2k',
+      isLive: true,
+      location: '北京',
+    ),
+    MixedContent(
+      id: '2',
+      type: ContentType.video,
+      title: '成都街头小吃攻略，人均20吃到撑',
+      author: '@成都吃货王',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400',
+      likes: '2.3k',
+      duration: '03:45',
+    ),
+    MixedContent(
+      id: '3',
+      type: ContentType.live,
+      title: '🌃 外滩夜景直播',
+      author: '@上海夜行者',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?w=400',
+      viewers: '2.3k',
+      isLive: true,
+      location: '上海',
+    ),
+    MixedContent(
+      id: '4',
+      type: ContentType.replay,
+      title: '西安城墙骑行全记录',
+      author: '@西安美食家',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?w=400',
+      viewers: '5.6k',
+      duration: '45:20',
+      isLive: false,
+    ),
+    MixedContent(
+      id: '5',
+      type: ContentType.video,
+      title: '西湖十景最佳拍摄点',
+      author: '@杭州西湖妹',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1598887142487-3c854d51eabb?w=400',
+      likes: '1.8k',
+      duration: '02:30',
+    ),
+    MixedContent(
+      id: '6',
+      type: ContentType.live,
+      title: '张家界玻璃栈道挑战',
+      author: '@冒险达人',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1513415564515-763d91423bdd?w=400',
+      viewers: '3.1k',
+      isLive: true,
+      location: '张家界',
+    ),
+  ];
+
   // ========== Getters ==========
   String get username => _username;
   String get bio => _bio;
@@ -215,6 +417,12 @@ class AppState extends ChangeNotifier {
   Set<String> get followedUsers => _followedUsers;
   bool get isLoading => _isLoading;
   bool get apiConnected => _apiConnected;
+  
+  // P0: 首页新数据 getter
+  List<BannerItem> get banners => _banners;
+  List<QuickEntry> get quickEntries => _quickEntries;
+  List<Map<String, dynamic>> get followedStreamers => _followedStreamers;
+  List<MixedContent> get mixedContent => _mixedContent;
 
   // ========== API方法 ==========
 

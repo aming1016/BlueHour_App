@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'live_room_screen.dart';
 
-/// Visily生成的首页设计 - NewHomeScreen
-/// 基于2026-03-05设计图实现
+/// P0 优化版首页 - 高留存设计
+/// 新增: Banner轮播 + 快捷入口 + 关注主播 + 混合内容流
 class NewHomeScreen extends StatefulWidget {
   const NewHomeScreen({super.key});
 
@@ -13,34 +13,375 @@ class NewHomeScreen extends StatefulWidget {
 }
 
 class _NewHomeScreenState extends State<NewHomeScreen> {
-  String _selectedCategory = 'For You';
-  
-  final List<String> _categories = [
-    'For You',
-    'Following',
-    'Beijing',
-    'Shanghai',
-    'Chengdu',
-    'Food',
-    'Nature',
-  ];
+  final PageController _bannerController = PageController();
+  int _currentBanner = 0;
+  String _selectedFilter = 'recommend';
+
+  @override
+  void initState() {
+    super.initState();
+    // Banner自动轮播
+    Future.delayed(const Duration(seconds: 3), _autoScrollBanner);
+  }
+
+  void _autoScrollBanner() {
+    if (!mounted) return;
+    final banners = context.read<AppState>().banners;
+    if (banners.isEmpty) return;
+    
+    setState(() {
+      _currentBanner = (_currentBanner + 1) % banners.length;
+    });
+    
+    _bannerController.animateToPage(
+      _currentBanner,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+    
+    Future.delayed(const Duration(seconds: 5), _autoScrollBanner);
+  }
+
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await context.read<AppState>().loadStreams();
+          },
+          child: CustomScrollView(
+            slivers: [
+              // 顶部 Header
+              SliverToBoxAdapter(child: _buildHeader()),
+              
+              // Banner 轮播
+              SliverToBoxAdapter(child: _buildBanner()),
+              
+              // 快捷入口
+              SliverToBoxAdapter(child: _buildQuickEntries()),
+              
+              // 关注的主播
+              SliverToBoxAdapter(child: _buildFollowedStreamers()),
+              
+              // 混合内容流标题
+              SliverToBoxAdapter(child: _buildContentHeader()),
+              
+              // 混合内容流 (Grid)
+              _buildMixedContentGrid(),
+              
+              // 底部留白
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 100),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 顶部 Header
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: Row(
+        children: [
+          // Logo
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF6B35), Color(0xFFFF8F6B)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'Travel Live',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          
+          const Spacer(),
+          
+          // 搜索
+          _buildIconButton(Icons.search_rounded, onTap: () {
+            // TODO: 搜索功能
+          }),
+          
+          const SizedBox(width: 8),
+          
+          // 消息
+          _buildIconButton(
+            Icons.notifications_outlined,
+            badge: true,
+            onTap: () {
+              // TODO: 消息中心
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIconButton(IconData icon, {bool badge = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: const Color(0xFF6B7280)),
+          ),
+          if (badge)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF3B30),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Banner 轮播
+  Widget _buildBanner() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final banners = appState.banners;
+        
+        return Container(
+          margin: const EdgeInsets.all(16),
+          height: 140,
+          child: Stack(
+            children: [
+              // 轮播页面
+              PageView.builder(
+                controller: _bannerController,
+                onPageChanged: (index) {
+                  setState(() => _currentBanner = index);
+                },
+                itemCount: banners.length,
+                itemBuilder: (context, index) {
+                  final banner = banners[index];
+                  return GestureDetector(
+                    onTap: () => _handleBannerTap(banner),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFFF6B35).withOpacity(0.9),
+                            Color(0xFFFF8F6B).withOpacity(0.9),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6B35).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // 背景图（如果有）
+                            if (banner.imageUrl.isNotEmpty)
+                              Image.network(
+                                banner.imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const SizedBox(),
+                              ),
+                            // 渐变遮罩
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    Colors.black.withOpacity(0.6),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // 文字内容
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    banner.title,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      '查看详情 →',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFFF6B35),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              
+              // 指示器
+              Positioned(
+                bottom: 12,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    banners.length,
+                    (index) => Container(
+                      width: index == _currentBanner ? 20 : 6,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: index == _currentBanner
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleBannerTap(BannerItem banner) {
+    switch (banner.actionType) {
+      case 'live':
+        // TODO: 跳转到指定直播间
+        break;
+      case 'task':
+        // TODO: 跳转到任务页面
+        break;
+      case 'web':
+        // TODO: 打开网页
+        break;
+    }
+  }
+
+  /// 快捷入口
+  Widget _buildQuickEntries() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final entries = appState.quickEntries;
+        
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: entries.map((entry) => _buildQuickEntryItem(entry)).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickEntryItem(QuickEntry entry) {
+    final isSelected = _selectedFilter == entry.filter;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedFilter = entry.filter ?? 'recommend');
+        // TODO: 根据筛选条件刷新内容
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFFF5F2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 顶部搜索栏
-            _buildHeader(),
-            
-            // 分类筛选
-            _buildCategoryFilter(),
-            
-            // 直播列表
-            Expanded(
-              child: _buildStreamList(),
+            Text(
+              entry.icon,
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              entry.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? const Color(0xFFFF6B35) : const Color(0xFF6B7280),
+              ),
             ),
           ],
         ),
@@ -48,203 +389,277 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     );
   }
 
-  /// 顶部Header（Logo + 搜索 + 消息）
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Logo/标题
-          const Text(
-            'Travel Live',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
-            ),
-          ),
-          
-          const Spacer(),
-          
-          // 搜索按钮
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.search,
-              color: Color(0xFF6B7280),
-              size: 20,
-            ),
-          ),
-          
-          const SizedBox(width: 8),
-          
-          // 消息通知
-          Stack(
+  /// 关注的主播
+  Widget _buildFollowedStreamers() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final streamers = appState.followedStreamers;
+        final liveStreamers = streamers.where((s) => s['isLive'] == true).toList();
+        
+        if (streamers.isEmpty) return const SizedBox();
+        
+        return Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: Color(0xFF6B7280),
-                  size: 20,
+              // 标题
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Text(
+                      '关注的主播',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (liveStreamers.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF5F2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${liveStreamers.length} 人在播',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFFF6B35),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              // 红点提示
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF6B35),
-                    shape: BoxShape.circle,
-                  ),
+              
+              const SizedBox(height: 12),
+              
+              // 横向列表
+              SizedBox(
+                height: 90,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: streamers.length,
+                  itemBuilder: (context, index) {
+                    final streamer = streamers[index];
+                    return _buildStreamerItem(streamer);
+                  },
                 ),
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStreamerItem(Map<String, dynamic> streamer) {
+    final isLive = streamer['isLive'] == true;
+    
+    return Container(
+      width: 70,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          // 头像
+          Stack(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isLive ? const Color(0xFFFF3B30) : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: ClipOval(
+                  child: Container(
+                    color: const Color(0xFFF5F5F5),
+                    child: const Icon(
+                      Icons.person,
+                      size: 28,
+                      color: Color(0xFFCCCCCC),
+                    ),
+                  ),
+                ),
+              ),
+              if (isLive)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF3B30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // 用户名
+          Text(
+            streamer['username'] ?? '',
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF1A1A2E),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
-  /// 分类筛选（横向滚动）
-  Widget _buildCategoryFilter() {
+  /// 内容区标题
+  Widget _buildContentHeader() {
     return Container(
-      height: 50,
-      margin: const EdgeInsets.only(top: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final isSelected = category == _selectedCategory;
-          
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategory = category;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected 
-                    ? const Color(0xFFFF6B35) 
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  if (!isSelected)
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                ],
-              ),
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? Colors.white : const Color(0xFF6B7280),
-                ),
-              ),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: Row(
+        children: [
+          const Text(
+            '推荐内容',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A2E),
             ),
-          );
-        },
+          ),
+          const Spacer(),
+          // 内容类型筛选
+          _buildContentFilter('全部', true),
+          const SizedBox(width: 8),
+          _buildContentFilter('直播', false),
+          const SizedBox(width: 8),
+          _buildContentFilter('视频', false),
+        ],
       ),
     );
   }
 
-  /// 直播列表（2列网格）
-  Widget _buildStreamList() {
+  Widget _buildContentFilter(String label, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFFF6B35) : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? Colors.white : const Color(0xFF6B7280),
+        ),
+      ),
+    );
+  }
+
+  /// 混合内容流 (Grid)
+  Widget _buildMixedContentGrid() {
     return Consumer<AppState>(
       builder: (context, appState, child) {
-        final streams = appState.liveStreams;
+        final contents = appState.mixedContent;
         
-        return GridView.builder(
+        return SliverPadding(
           padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.75,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final content = contents[index];
+                return _buildMixedContentCard(content);
+              },
+              childCount: contents.length,
+            ),
           ),
-          itemCount: streams.length,
-          itemBuilder: (context, index) {
-            final stream = streams[index];
-            return _buildStreamCard(stream);
-          },
         );
       },
     );
   }
 
-  /// 直播卡片
-  Widget _buildStreamCard(stream) {
+  Widget _buildMixedContentCard(MixedContent content) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LiveRoomScreen(streamId: stream.id),
-          ),
-        );
+        if (content.type == ContentType.live) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LiveRoomScreen(streamId: content.id),
+            ),
+          );
+        } else {
+          // TODO: 跳转到视频/回放详情
+        }
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 8,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 封面图区域
+            // 封面图
             Expanded(
-              flex: 3,
+              flex: 5,
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // 封面图
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
+                      top: Radius.circular(12),
                     ),
                     child: Container(
-                      width: double.infinity,
                       color: const Color(0xFFE5E5E5),
-                      child: stream.thumbnail.isNotEmpty
+                      child: content.thumbnailUrl.isNotEmpty
                           ? Image.network(
-                              stream.thumbnail,
+                              content.thumbnailUrl,
                               fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.image,
+                                color: Color(0xFFCCCCCC),
+                              ),
                             )
                           : const Icon(
                               Icons.image,
@@ -253,174 +668,105 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     ),
                   ),
                   
-                  // LIVE标识
+                  // 类型标签
                   Positioned(
                     top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF3B30),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'LIVE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // 观看人数
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.visibility,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            stream.viewers,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // 主播头像（左下角）
-                  Positioned(
-                    bottom: 8,
                     left: 8,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
+                    child: _buildTypeBadge(content.type),
+                  ),
+                  
+                  // 观看数/时长
+                  if (content.viewers != null || content.duration != null)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: stream.avatarUrl.isNotEmpty
-                            ? Image.network(
-                                stream.avatarUrl,
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                color: const Color(0xFFFF6B35),
-                                child: const Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (content.type == ContentType.live) ...[
+                              const Icon(
+                                Icons.visibility,
+                                size: 10,
+                                color: Colors.white,
                               ),
+                              const SizedBox(width: 2),
+                            ],
+                            Text(
+                              content.viewers ?? content.duration ?? '',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
             
-            // 信息区域
+            // 信息区
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 主播名
+                    // 标题
                     Text(
-                      stream.username,
+                      content.title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1A1A2E),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    const SizedBox(height: 4),
-                    
-                    // 直播标题
-                    Text(
-                      stream.title,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
+                        height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    const SizedBox(height: 8),
+                    const Spacer(),
                     
-                    // 地点标签
+                    // 作者 + 点赞
                     Row(
                       children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 12,
-                          color: Color(0xFFFF6B35),
-                        ),
-                        const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            stream.location,
+                            content.author,
                             style: const TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF9CA3AF),
+                              color: Color(0xFF6B7280),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (content.likes != null) ...[
+                          const Icon(
+                            Icons.favorite,
+                            size: 12,
+                            color: Color(0xFFFF6B35),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            content.likes!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -428,6 +774,42 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeBadge(ContentType type) {
+    String label;
+    Color color;
+    
+    switch (type) {
+      case ContentType.live:
+        label = '直播中';
+        color = const Color(0xFFFF3B30);
+        break;
+      case ContentType.replay:
+        label = '回放';
+        color = const Color(0xFF6B7280);
+        break;
+      case ContentType.video:
+        label = '短视频';
+        color = const Color(0xFF2196F3);
+        break;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
       ),
     );
