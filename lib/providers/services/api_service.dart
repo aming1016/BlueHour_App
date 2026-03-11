@@ -269,9 +269,8 @@ class ApiService {
   }
 
   // ========== 直播间管理接口 ==========
-  // 注意：后端createStream需要 named parameters，但app_state.dart调用时传的是 positional
-  // 这里调整为与后端对齐
-  Future<Map<String, dynamic>?> createStream(String token, String title, String? location, String? category) async {
+  // 使用命名参数匹配app_state.dart的调用方式
+  Future<Map<String, dynamic>?> createStream(String token, {String? title, String? location, String? category}) async {
     try {
       final response = await _client.post(
         Uri.parse('$baseUrl/streams/create'),
