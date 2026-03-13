@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 消息记录页面 - 消息列表 + Run Into
+/// 消息记录页面 - 消息列表
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
@@ -61,30 +61,12 @@ class _MessagesScreenState extends State<MessagesScreen>
     },
   ];
 
-  // Run Into 留言数据（合并原Profile邂逅数据）
-  final List<Map<String, dynamic>> runIntoMessages = [
-    // 原Messages数据
-    {'id': '1', 'name': '小明', 'avatar': '👦', 'text': '有人一起去北京吗？', 'time': '2分钟前'},
-    {'id': '2', 'name': '小红', 'avatar': '👧', 'text': '成都火锅求推荐！', 'time': '5分钟前'},
-    {'id': '3', 'name': '旅行者', 'avatar': '🧳', 'text': '求西安攻略', 'time': '8分钟前'},
-    {'id': '4', 'name': '摄影师', 'avatar': '📷', 'text': '分享西湖美景', 'time': '12分钟前'},
-    {'id': '5', 'name': '吃货', 'avatar': '🍜', 'text': '西安肉夹馍太好吃了', 'time': '15分钟前'},
-    {'id': '6', 'name': '风景控', 'avatar': '🌄', 'text': '黄山日出绝美', 'time': '20分钟前'},
-    {'id': '7', 'name': '古镇爱好者', 'avatar': '🏮', 'text': '乌镇夜景超赞', 'time': '25分钟前'},
-    {'id': '8', 'name': '海岛控', 'avatar': '🏝️', 'text': '三亚求攻略', 'time': '30分钟前'},
-    // 原Profile邂逅数据
-    {'id': '9', 'name': '北京达人', 'avatar': '🏛️', 'text': '故宫拍照最佳机位', 'time': '35分钟前'},
-    {'id': '10', 'name': '成都美食家', 'avatar': '🐼', 'text': '成都火锅求组队', 'time': '40分钟前'},
-    {'id': '11', 'name': '西安导游', 'avatar': '🏺', 'text': '求西安深度游攻略', 'time': '45分钟前'},
-    {'id': '12', 'name': '杭州小姐姐', 'avatar': '🌸', 'text': '西湖游船约起来', 'time': '50分钟前'},
-    {'id': '13', 'name': '广州吃货', 'avatar': '🥟', 'text': '广州早茶必吃推荐', 'time': '1小时前'},
-    {'id': '14', 'name': '丽江旅人', 'avatar': '🎒', 'text': '丽江组队中，求伴', 'time': '1小时前'},
-  ];
+
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -106,15 +88,9 @@ class _MessagesScreenState extends State<MessagesScreen>
             // Tab 栏
             _buildTabBar(),
             
-            // Tab 内容
+            // 消息列表内容
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildMessageList(),
-                  _buildRunIntoTab(),
-                ],
-              ),
+              child: _buildMessageList(),
             ),
           ],
         ),
@@ -154,58 +130,32 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// Tab 栏
+  /// Tab 栏（仅消息列表）
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: const Color(0xFFFF6B35),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white.withOpacity(0.5),
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.message, size: 18),
-                const SizedBox(width: 6),
-                const Text('消息'),
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B30),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ),
-              ],
+      child: Row(
+        children: [
+          const Icon(Icons.message, size: 20, color: Colors.white),
+          const SizedBox(width: 8),
+          const Text(
+            '消息列表',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-          const Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.directions_run, size: 18),
-                SizedBox(width: 6),
-                Text('Run Into'),
-              ],
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF3B30),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              '3条新消息',
+              style: TextStyle(fontSize: 12, color: Colors.white),
             ),
           ),
         ],
@@ -527,154 +477,7 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 }
 
-/// 用户资料半窗
-class UserProfileSheet extends StatelessWidget {
-  final Map<String, dynamic> user;
 
-  const UserProfileSheet({super.key, required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.5,
-      decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Column(
-        children: [
-          // 拖动条
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // 头像
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF6B35), Color(0xFFFF8F6B)],
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: Center(
-              child: Text(
-                user['avatar'],
-                style: const TextStyle(fontSize: 40),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          Text(
-            '@${user['name']}',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // 留言内容
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '"${user['text']}"',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.9),
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          
-          const Spacer(),
-          
-          // 操作按钮
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                // 关注按钮
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('已关注 ${user['name']}'),
-                          backgroundColor: const Color(0xFF34C759),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6B35),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text('关注'),
-                  ),
-                ),
-                
-                const SizedBox(width: 12),
-                
-                // 聊天按钮
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(user: user),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('去聊天'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// 聊天页面
 class ChatScreen extends StatefulWidget {
@@ -877,90 +680,4 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-/// 无限循环跑马灯行
-class _InfiniteMarqueeRow extends StatefulWidget {
-  final int rowIndex;
-  final List<Map<String, dynamic>> messages;
-  final Function(Map<String, dynamic>) onTap;
 
-  const _InfiniteMarqueeRow({
-    required this.rowIndex,
-    required this.messages,
-    required this.onTap,
-  });
-
-  @override
-  State<_InfiniteMarqueeRow> createState() => _InfiniteMarqueeRowState();
-}
-
-class _InfiniteMarqueeRowState extends State<_InfiniteMarqueeRow>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 20 + widget.rowIndex * 5),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rowMessages = widget.messages
-        .where((m) => widget.messages.indexOf(m) % 3 == widget.rowIndex)
-        .toList();
-
-    final displayMessages = [
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages
-    ];
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final totalWidth = displayMessages.length * 200.0;
-        final offset = -(_controller.value * totalWidth) % (totalWidth / 2);
-
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: Row(
-            children: displayMessages
-                .map((msg) => GestureDetector(
-                      onTap: () => widget.onTap(msg),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2C2C2E),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                        ),
-                        child: Text(
-                          '${msg['name']}: ${msg['text']}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ),
-                    ))
-                .toList(),
-          ),
-        );
-      },
-    );
-  }
-}
