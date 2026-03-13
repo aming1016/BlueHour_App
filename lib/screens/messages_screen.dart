@@ -96,21 +96,13 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 顶部标题栏
+  /// 顶部标题栏（简洁版）
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Text(
-            '消息',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -128,21 +120,15 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 未读消息数量
-  int get _totalUnread {
-    return messageList.fold(0, (sum, msg) => sum + (msg['unread'] as int));
-  }
-
-  /// Tab 栏（简洁版）
+  /// Tab 栏（极简版）
   Widget _buildTabBar() {
-    final totalUnread = _totalUnread;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: const Row(
         children: [
-          const Icon(Icons.message, size: 20, color: Colors.white),
-          const SizedBox(width: 8),
-          const Text(
+          Icon(Icons.message, size: 20, color: Colors.white),
+          SizedBox(width: 8),
+          Text(
             '消息',
             style: TextStyle(
               fontSize: 18,
@@ -150,19 +136,6 @@ class _MessagesScreenState extends State<MessagesScreen>
               color: Colors.white,
             ),
           ),
-          const Spacer(),
-          if (totalUnread > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF3B30),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$totalUnread条未读',
-                style: const TextStyle(fontSize: 12, color: Colors.white),
-              ),
-            ),
         ],
       ),
     );
