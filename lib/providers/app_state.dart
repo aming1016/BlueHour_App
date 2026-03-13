@@ -300,23 +300,84 @@ class AppState extends ChangeNotifier {
 
   // ========== API方法 ==========
 
-  /// 初始化并检查API连接
+  /// 初始化并检查API连接（带超时）
   Future<void> initialize() async {
     _isLoading = true;
     notifyListeners();
     
-    _apiConnected = await _api.healthCheck();
-    
-    if (_apiConnected) {
-      await Future.wait([
-        loadStreams(),
-        loadBalance(),
-        loadHomepageData(), // 加载首页数据
-      ]);
+    // API检查添加3秒超时，避免卡住
+    try {
+      _apiConnected = await _api.healthCheck().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+    } catch (e) {
+      _apiConnected = false;
     }
+    
+    // 无论API是否连接，都加载本地数据让APP能启动
+    if (_apiConnected) {
+      try {
+        await Future.wait([
+          loadStreams(),
+          loadBalance(),
+          loadHomepageData(),
+        ]).timeout(const Duration(seconds: 5));
+      } catch (e) {
+        print('API加载超时，使用本地数据');
+      }
+    }
+    
+    // 确保有默认数据
+    _initDefaultData();
     
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// 初始化默认数据（离线模式）
+  void _initDefaultData() {
+    // 如果直播列表为空，添加示例数据
+    if (_liveStreams.isEmpty) {
+      _liveStreams = [
+        LiveStream(
+          id: '1',
+          title: '🏛️ 北京故宫直播',
+          username: '导游小王',
+          location: '北京·故宫',
+          viewers: '12.5k',
+          avatarUrl: '',
+          isLive: true,
+        ),
+        LiveStream(
+          id: '2',
+          title: '🐼 成都熊猫基地',
+          username: '熊猫守护者',
+          location: '成都·大熊猫基地',
+          viewers: '8.3k',
+          avatarUrl: '',
+          isLive: true,
+        ),
+        LiveStream(
+          id: '3',
+          title: '🌸 杭州西湖漫步',
+          username: '江南导游',
+          location: '杭州·西湖',
+          viewers: '5.2k',
+          avatarUrl: '',
+          isLive: true,
+        ),
+      ];
+    }
+
+    // 初始化评论列表
+    if (_comments.isEmpty) {
+      _comments = [
+        {'username': '游客A', 'text': '主播好！', 'gift': null},
+        {'username': '游客B', 'text': '风景真美', 'gift': null},
+        {'username': '游客C', 'text': '下次想去', 'gift': null},
+      ];
+    }
   }
 
   /// 加载首页所有数据
