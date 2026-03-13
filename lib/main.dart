@@ -6,6 +6,7 @@ import 'screens/tiktok_discover_screen.dart';
 import 'screens/tiktok_profile_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/messages_screen.dart';
+import 'screens/globe_discover_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,9 +60,9 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const TiktokHomeScreen(), // 抖音风格全屏直播流
-    const TiktokDiscoverScreen(), // 抖音风格发现页
-    const MessagesScreen(), // 消息页面（消息列表 + Run Into）
-    const TiktokProfileScreen(), // 抖音风格个人中心（包含钱包入口）
+    const GlobeDiscoverScreen(), // 地球仪发现页（底部导航栏）
+    const MessagesScreen(), // 消息页面
+    const TiktokProfileScreen(), // 抖音风格个人中心
   ];
 
   void _onItemTapped(int index) {
