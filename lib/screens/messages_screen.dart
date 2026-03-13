@@ -350,19 +350,6 @@ class _MessagesScreenState extends State<MessagesScreen>
   Widget _buildRunIntoTab() {
     return Column(
       children: [
-        // 说明文字
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            '💫 在这里邂逅志同道合的旅行者\n点击留言查看对方资料并开始聊天',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
-            ),
-          ),
-        ),
-        
         // 跑马灯区域
         Expanded(
           child: _buildMarqueeArea(),
@@ -394,16 +381,17 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 跑马灯区域 - 简化版只展示昵称:留言
+  /// 跑马灯区域 - 简化版只展示昵称:留言（3行循环）
   Widget _buildMarqueeArea() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 多行跑马灯
-          ...List.generate(5, (index) {
+          // 3行跑马灯
+          ...List.generate(3, (index) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 24),
               child: _buildMarqueeRow(index),
             );
           }),
@@ -413,21 +401,24 @@ class _MessagesScreenState extends State<MessagesScreen>
   }
 
   Widget _buildMarqueeRow(int rowIndex) {
-    // 为每行分配不同的消息
+    // 为每行分配不同的消息（3行）
     final rowMessages = runIntoMessages
-        .where((m) => runIntoMessages.indexOf(m) % 5 == rowIndex)
+        .where((m) => runIntoMessages.indexOf(m) % 3 == rowIndex)
         .toList();
 
+    // 确保有足够的数据循环
+    final displayMessages = [...rowMessages, ...rowMessages, ...rowMessages];
+
     return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: -300),
-      duration: Duration(seconds: 12 + rowIndex * 2),
+      tween: Tween<double>(begin: 0, end: -500),
+      duration: Duration(seconds: 15 + rowIndex * 3),
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(value, 0),
           child: Row(
             children: [
-              ...rowMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
-              ...rowMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
+              ...displayMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
+              ...displayMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
             ],
           ),
         );
