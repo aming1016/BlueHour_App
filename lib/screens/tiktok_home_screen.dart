@@ -115,12 +115,9 @@ class _TiktokHomeScreenState extends State<TiktokHomeScreen> {
           Positioned(
             left: 16,
             right: 80,
-            bottom: 20,
+            bottom: 100,
             child: _buildBottomInfo(),
           ),
-          
-          // 底部导航栏
-          _buildBottomNavigation(),
         ],
       ),
     );
