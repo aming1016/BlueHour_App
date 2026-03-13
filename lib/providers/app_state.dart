@@ -712,7 +712,7 @@ class AppState extends ChangeNotifier {
       final response = await _api.createStream(
         token: _token!,
         title: title,
-        location: location,
+        location: location ?? '',
         latitude: 0.0,
         longitude: 0.0,
       );
