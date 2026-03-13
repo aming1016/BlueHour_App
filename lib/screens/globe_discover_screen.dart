@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 地球仪发现页面 - 旋转地球仪
+/// 地球仪发现页面 - 2D地球旋转
 class GlobeDiscoverScreen extends StatefulWidget {
   const GlobeDiscoverScreen({super.key});
 
@@ -11,10 +11,8 @@ class GlobeDiscoverScreen extends StatefulWidget {
 class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _autoRotationController;
-  double _manualRotationX = 0.0;
-  double _manualRotationY = 0.0;
-  double _startX = 0.0;
-  double _startY = 0.0;
+  double _manualRotation = 0.0;
+  double _startRotation = 0.0;
 
   @override
   void initState() {
@@ -32,14 +30,12 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   }
 
   void _onPanStart(DragStartDetails details) {
-    _startX = _manualRotationX;
-    _startY = _manualRotationY;
+    _startRotation = _manualRotation;
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      _manualRotationX = _startX + details.delta.dx * 0.01;
-      _manualRotationY = _startY + details.delta.dy * 0.01;
+      _manualRotation = _startRotation + details.delta.dx * 0.01;
     });
   }
 
@@ -51,10 +47,10 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
         child: Column(
           children: [
             // 顶部标题
-            Padding(
-              padding: const EdgeInsets.all(16),
+            const Padding(
+              padding: EdgeInsets.all(16),
               child: Center(
-                child: const Text(
+                child: Text(
                   '探索',
                   style: TextStyle(
                     fontSize: 18,
@@ -64,8 +60,8 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                 ),
               ),
             ),
-            
-            // 旋转地球仪
+
+            // 旋转地球仪（2D球型）
             Expanded(
               child: Center(
                 child: GestureDetector(
@@ -75,94 +71,74 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                     animation: _autoRotationController,
                     builder: (context, child) {
                       final autoAngle = _autoRotationController.value * 2 * 3.14159;
-                      return Transform(
-                        transform: Matrix4.identity()
-                          ..rotateY(autoAngle + _manualRotationX)
-                          ..rotateX(_manualRotationY),
-                        alignment: Alignment.center,
+                      return Transform.rotate(
+                        angle: autoAngle + _manualRotation,
                         child: Container(
                           width: 280,
                           height: 280,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const RadialGradient(
+                            gradient: RadialGradient(
                               colors: [
                                 Color(0xFF4A90D9),
                                 Color(0xFF1E3A5F),
                               ],
                               center: Alignment(-0.3, -0.3),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF4A90D9).withOpacity(0.5),
-                                blurRadius: 60,
-                                spreadRadius: 10,
-                              ),
-                            ],
                           ),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // 地球纹理
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      const Color(0xFF4A90D9).withOpacity(0.8),
-                                      const Color(0xFF2E7D32).withOpacity(0.6),
-                                      const Color(0xFF1E3A5F).withOpacity(0.9),
-                                    ],
+                              // 地球圆形剪切
+                              ClipOval(
+                                child: Container(
+                                  width: 280,
+                                  height: 280,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFF4A90D9).withOpacity(0.8),
+                                        const Color(0xFF2E7D32).withOpacity(0.6),
+                                        const Color(0xFF1E3A5F).withOpacity(0.9),
+                                      ],
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    children: _buildContinents2D(),
                                   ),
                                 ),
                               ),
 
-                              // 大陆轮廓
-                              ..._buildContinents(),
-
-                              // 光晕效果
+                              // 球型光晕效果（让看起来是3D球型）
                               Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: RadialGradient(
                                     colors: [
-                                      Colors.white.withOpacity(0.1),
+                                      Colors.white.withOpacity(0.15),
                                       Colors.transparent,
+                                      Colors.black.withOpacity(0.3),
                                     ],
                                     center: const Alignment(-0.3, -0.3),
-                                    radius: 0.6,
+                                    radius: 0.8,
                                   ),
                                 ),
                               ),
 
-                              // 中心文字
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    '🌍',
-                                    style: TextStyle(fontSize: 60),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    '探索世界',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white.withOpacity(0.9),
+                              // 边框光晕
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4A90D9).withOpacity(0.4),
+                                      blurRadius: 40,
+                                      spreadRadius: 5,
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '拖动地球旋转',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -177,12 +153,21 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
             // 底部提示
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(
-                '自动旋转中，可手动拖动',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.5),
-                ),
+              child: Column(
+                children: [
+                  const Text(
+                    '🌍',
+                    style: TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '拖动地球旋转探索',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -191,24 +176,73 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     );
   }
 
-  List<Widget> _buildContinents() {
+  List<Widget> _buildContinents2D() {
+    // 2D大陆形状（简化版圆形/椭圆）
     return [
-      Positioned(top: 60, right: 50, child: _continent(80, 60)),
-      Positioned(top: 70, left: 80, child: _continent(50, 40)),
-      Positioned(top: 110, left: 90, child: _continent(50, 70)),
-      Positioned(top: 50, left: 40, child: _continent(70, 50)),
-      Positioned(bottom: 60, left: 70, child: _continent(45, 70)),
-      Positioned(bottom: 80, right: 70, child: _continent(50, 40)),
+      // 亚洲
+      Positioned(
+        top: 50,
+        right: 30,
+        child: _continent2D(90, 70, const Color(0xFF2E7D32)),
+      ),
+      // 欧洲
+      Positioned(
+        top: 60,
+        left: 70,
+        child: _continent2D(50, 40, const Color(0xFF388E3C)),
+      ),
+      // 非洲
+      Positioned(
+        top: 100,
+        left: 80,
+        child: _continent2D(55, 85, const Color(0xFF2E7D32)),
+      ),
+      // 北美
+      Positioned(
+        top: 40,
+        left: 20,
+        child: _continent2D(80, 60, const Color(0xFF388E3C)),
+      ),
+      // 南美
+      Positioned(
+        bottom: 50,
+        left: 60,
+        child: _continent2D(50, 80, const Color(0xFF2E7D32)),
+      ),
+      // 澳洲
+      Positioned(
+        bottom: 70,
+        right: 50,
+        child: _continent2D(60, 45, const Color(0xFF388E3C)),
+      ),
+      // 南极（底部）
+      Positioned(
+        bottom: 0,
+        left: 90,
+        child: _continent2D(100, 40, const Color(0xFFFFFFFF).withOpacity(0.8)),
+      ),
+      // 格陵兰
+      Positioned(
+        top: 20,
+        left: 60,
+        child: _continent2D(35, 25, const Color(0xFFFFFFFF).withOpacity(0.7)),
+      ),
     ];
   }
 
-  Widget _continent(double w, double h) {
+  Widget _continent2D(double width, double height, Color color) {
     return Container(
-      width: w,
-      height: h,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFF2E7D32).withOpacity(0.4),
-        borderRadius: BorderRadius.circular(30),
+        color: color.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
+          ),
+        ],
       ),
     );
   }
