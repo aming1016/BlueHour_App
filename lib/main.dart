@@ -105,6 +105,62 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  /// 带红点的消息导航项
+  Widget _buildMessageNavItem(int index) {
+    final isSelected = _selectedIndex == index;
+    final unreadCount = 3; // TODO: 从全局状态获取真实未读数
+    
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              Icon(
+                Icons.message,
+                size: 24,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF3B30),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '消息',
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPlusButton() {
     return GestureDetector(
       onTap: _showGoLiveModal,
@@ -155,7 +211,7 @@ class _MainScreenState extends State<MainScreen> {
                 _buildNavItem(Icons.home, '首页', 0),
                 _buildNavItem(Icons.explore, '发现', 1),
                 _buildPlusButton(),
-                _buildNavItem(Icons.message, '消息', 2),
+                _buildMessageNavItem(2), // 带红点的消息图标
                 _buildNavItem(Icons.person, '我', 3),
               ],
             ),

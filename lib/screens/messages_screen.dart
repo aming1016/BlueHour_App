@@ -128,8 +128,14 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// Tab 栏（仅消息列表）
+  /// 未读消息数量
+  int get _totalUnread {
+    return messageList.fold(0, (sum, msg) => sum + (msg['unread'] as int));
+  }
+
+  /// Tab 栏（简洁版）
   Widget _buildTabBar() {
+    final totalUnread = _totalUnread;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -137,7 +143,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           const Icon(Icons.message, size: 20, color: Colors.white),
           const SizedBox(width: 8),
           const Text(
-            '消息列表',
+            '消息',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -145,17 +151,18 @@ class _MessagesScreenState extends State<MessagesScreen>
             ),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF3B30),
-              borderRadius: BorderRadius.circular(12),
+          if (totalUnread > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF3B30),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$totalUnread条未读',
+                style: const TextStyle(fontSize: 12, color: Colors.white),
+              ),
             ),
-            child: const Text(
-              '3条新消息',
-              style: TextStyle(fontSize: 12, color: Colors.white),
-            ),
-          ),
         ],
       ),
     );
