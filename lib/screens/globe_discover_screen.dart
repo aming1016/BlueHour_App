@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// 地球仪发现页面 - 2D地球旋转
@@ -13,6 +14,8 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   late AnimationController _autoRotationController;
   double _manualRotation = 0.0;
   double _startRotation = 0.0;
+  bool _isManualRotating = false;
+  Timer? _resumeTimer;
 
   @override
   void initState() {
@@ -25,17 +28,31 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
 
   @override
   void dispose() {
+    _resumeTimer?.cancel();
     _autoRotationController.dispose();
     super.dispose();
   }
 
   void _onPanStart(DragStartDetails details) {
     _startRotation = _manualRotation;
+    _isManualRotating = true;
+    _resumeTimer?.cancel();
+    _autoRotationController.stop();
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
       _manualRotation = _startRotation + details.delta.dx * 0.01;
+    });
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    _isManualRotating = false;
+    // 2秒后恢复自动旋转
+    _resumeTimer = Timer(const Duration(seconds: 2), () {
+      if (!_isManualRotating && mounted) {
+        _autoRotationController.repeat();
+      }
     });
   }
 
@@ -67,6 +84,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                 child: GestureDetector(
                   onPanStart: _onPanStart,
                   onPanUpdate: _onPanUpdate,
+                  onPanEnd: _onPanEnd,
                   child: AnimatedBuilder(
                     animation: _autoRotationController,
                     builder: (context, child) {
