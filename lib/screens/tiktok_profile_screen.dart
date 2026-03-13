@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'wallet_screen.dart';
+import 'encounter_screen.dart';
 
 /// 抖音风格个人中心 - 数据看板+作品展示
 class TiktokProfileScreen extends StatefulWidget {
@@ -89,10 +90,10 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
                       fontWeight: FontWeight.normal,
                     ),
                     tabs: const [
-                      Tab(text: '作品 24'),
-                      Tab(text: '喜欢 156'),
-                      Tab(text: '收藏 32'),
-                      Tab(text: '邂逅'),
+                      Tab(text: '作品'),
+                      Tab(text: '喜欢'),
+                      Tab(text: '收藏'),
+                      Tab(text: '✨ 邂逅'),
                     ],
                   ),
                 ),
