@@ -12,8 +12,9 @@ class GlobeDiscoverScreen extends StatefulWidget {
 class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _autoRotationController;
-  double _manualRotation = 0.0;
+  double _currentRotation = 0.0;
   double _startRotation = 0.0;
+  double _startDragX = 0.0;
   bool _isManualRotating = false;
   Timer? _resumeTimer;
 
@@ -34,15 +35,19 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   }
 
   void _onPanStart(DragStartDetails details) {
-    _startRotation = _manualRotation;
+    _startDragX = details.globalPosition.dx;
+    // 记录当前总旋转角度（手动+自动）
+    _startRotation = _currentRotation;
     _isManualRotating = true;
     _resumeTimer?.cancel();
     _autoRotationController.stop();
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
+    final dx = details.globalPosition.dx - _startDragX;
     setState(() {
-      _manualRotation = _startRotation + details.delta.dx * 0.01;
+      // 基于起始角度加上拖动的增量
+      _currentRotation = _startRotation + dx * 0.005;
     });
   }
 
@@ -51,6 +56,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     // 2秒后恢复自动旋转
     _resumeTimer = Timer(const Duration(seconds: 2), () {
       if (!_isManualRotating && mounted) {
+        _autoRotationController.forward(from: _currentRotation / (2 * 3.14159));
         _autoRotationController.repeat();
       }
     });
@@ -89,8 +95,10 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                     animation: _autoRotationController,
                     builder: (context, child) {
                       final autoAngle = _autoRotationController.value * 2 * 3.14159;
+                      // 手动操作时只使用手动角度，自动时使用自动角度
+                      final angle = _isManualRotating ? _currentRotation : autoAngle;
                       return Transform.rotate(
-                        angle: autoAngle + _manualRotation,
+                        angle: angle,
                         child: Container(
                           width: 280,
                           height: 280,
