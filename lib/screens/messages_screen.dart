@@ -350,8 +350,9 @@ class _MessagesScreenState extends State<MessagesScreen>
   Widget _buildRunIntoTab() {
     return Column(
       children: [
-        // 跑马灯区域
-        Expanded(
+        // 跑马灯区域（放上面）
+        SizedBox(
+          height: 200,
           child: _buildMarqueeArea(),
         ),
         
