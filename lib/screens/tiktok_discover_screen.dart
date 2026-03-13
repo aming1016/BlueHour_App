@@ -8,18 +8,39 @@ class TiktokDiscoverScreen extends StatefulWidget {
   State<TiktokDiscoverScreen> createState() => _TiktokDiscoverScreenState();
 }
 
-class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
-  double _rotationAngle = 0.0;
-  double _startAngle = 0.0;
+class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _autoRotationController;
+  double _manualRotationX = 0.0;
+  double _manualRotationY = 0.0;
+  double _startX = 0.0;
+  double _startY = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoRotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _autoRotationController.dispose();
+    super.dispose();
+  }
 
   void _onPanStart(DragStartDetails details) {
-    _startAngle = _rotationAngle;
+    _startX = _manualRotationX;
+    _startY = _manualRotationY;
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      // 根据水平拖动距离计算旋转角度
-      _rotationAngle = _startAngle + details.delta.dx * 0.01;
+      // 支持上下左右斜向转动
+      _manualRotationX = _startX + details.delta.dx * 0.01;
+      _manualRotationY = _startY + details.delta.dy * 0.01;
     });
   }
 
@@ -65,14 +86,24 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
               ),
             ),
             
-            // 旋转地球仪（可手动拖动）
+            // 旋转地球仪（自动旋转+可手动拖动）
             Expanded(
               child: Center(
                 child: GestureDetector(
                   onPanStart: _onPanStart,
                   onPanUpdate: _onPanUpdate,
-                  child: Transform.rotate(
-                    angle: _rotationAngle,
+                  child: AnimatedBuilder(
+                    animation: _autoRotationController,
+                    builder: (context, child) {
+                      final autoAngle = _autoRotationController.value * 2 * 3.14159;
+                      return Transform(
+                        transform: Matrix4.identity()
+                          ..rotateY(autoAngle + _manualRotationX)
+                          ..rotateX(_manualRotationY),
+                        alignment: Alignment.center,
+                        child: child,
+                      );
+                    },
                     child: Container(
                         width: 280,
                         height: 280,
