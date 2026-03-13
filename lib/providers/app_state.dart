@@ -710,10 +710,11 @@ class AppState extends ChangeNotifier {
 
     try {
       final response = await _api.createStream(
-        _token!,
+        token: _token!,
         title: title,
         location: location,
-        category: category,
+        latitude: 0.0,
+        longitude: 0.0,
       );
 
       if (response != null && response['code'] == 0) {
@@ -739,7 +740,10 @@ class AppState extends ChangeNotifier {
     }
 
     try {
-      final response = await _api.endStream(_token!, streamId);
+      final response = await _api.endStream(
+        token: _token!,
+        streamId: streamId,
+      );
 
       if (response != null && response['code'] == 0) {
         return {'success': true, 'data': response['data']};
