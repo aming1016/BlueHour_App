@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import 'wallet_screen.dart';
+import 'wallet_screen.dart';
 
 /// 抖音风格个人中心 - 数据看板+作品展示
 class TiktokProfileScreen extends StatefulWidget {
@@ -257,7 +259,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
     );
   }
 
-  /// 数据统计
+  /// 数据统计 + 钱包入口
   Widget _buildStats() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
@@ -269,6 +271,46 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
           _buildStatItem('关注', '128'),
           _buildStatDivider(),
           _buildStatItem('粉丝', '5.2万'),
+          _buildStatDivider(),
+          _buildWalletButton(), // 钱包入口
+        ],
+      ),
+    );
+  }
+
+  /// 钱包入口按钮
+  Widget _buildWalletButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WalletScreen(),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF6B35).withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet,
+              size: 20,
+              color: Color(0xFFFF6B35),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '钱包',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white70,
+            ),
+          ),
         ],
       ),
     );
@@ -313,6 +355,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
         children: [
           // 编辑资料
           Expanded(
+            flex: 2,
             child: _buildActionButton(
               '编辑资料',
               isPrimary: false,
@@ -320,8 +363,19 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
             ),
           ),
           const SizedBox(width: 12),
+          // 钱包入口
+          Expanded(
+            flex: 2,
+            child: _buildActionButton(
+              '💰 钱包',
+              isPrimary: false,
+              onTap: () => _openWallet(),
+            ),
+          ),
+          const SizedBox(width: 12),
           // 开播
           Expanded(
+            flex: 3,
             child: _buildActionButton(
               '🎥 开始直播',
               isPrimary: true,
@@ -329,6 +383,16 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 打开钱包页面
+  void _openWallet() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WalletScreen(),
       ),
     );
   }

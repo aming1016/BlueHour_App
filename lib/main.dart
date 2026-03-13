@@ -59,16 +59,10 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const TiktokHomeScreen(), // 抖音风格全屏直播流
     const TiktokDiscoverScreen(), // 抖音风格发现页
-    const SizedBox(), // Placeholder for center button
-    const WalletScreen(),
-    const TiktokProfileScreen(), // 抖音风格个人中心
+    const TiktokProfileScreen(), // 抖音风格个人中心（包含钱包入口）
   ];
 
   void _onItemTapped(int index) {
-    if (index == 2) {
-      _showGoLiveModal();
-      return;
-    }
     setState(() {
       _selectedIndex = index;
     });
@@ -111,7 +105,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildPlusButton() {
     return GestureDetector(
-      onTap: () => _onItemTapped(2),
+      onTap: _showGoLiveModal,
       child: Container(
         width: 44,
         height: 30,
@@ -159,8 +153,7 @@ class _MainScreenState extends State<MainScreen> {
                 _buildNavItem(Icons.home, '首页', 0),
                 _buildNavItem(Icons.explore, '发现', 1),
                 _buildPlusButton(),
-                _buildNavItem(Icons.account_balance_wallet, '钱包', 3),
-                _buildNavItem(Icons.person, '我', 4),
+                _buildNavItem(Icons.person, '我', 2),
               ],
             ),
           ),
