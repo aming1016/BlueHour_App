@@ -96,13 +96,21 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 顶部标题栏（简洁版）
+  /// 顶部标题栏
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          const Text(
+            '消息',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const Spacer(),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -120,22 +128,13 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// Tab 栏（极简版）
+  /// Tab 栏（仅图标）
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: const Row(
         children: [
           Icon(Icons.message, size: 20, color: Colors.white),
-          SizedBox(width: 8),
-          Text(
-            '消息',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
         ],
       ),
     );
