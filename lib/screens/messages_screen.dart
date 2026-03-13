@@ -11,7 +11,7 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // 模拟消息列表数据
   final List<Map<String, dynamic>> messageList = [
     {
@@ -61,8 +61,6 @@ class _MessagesScreenState extends State<MessagesScreen>
     },
   ];
 
-
-
   @override
   void initState() {
     super.initState();
@@ -84,10 +82,10 @@ class _MessagesScreenState extends State<MessagesScreen>
           children: [
             // 顶部标题栏
             _buildHeader(),
-            
-            // Tab 栏
+
+            // Tab 栏（仅消息列表）
             _buildTabBar(),
-            
+
             // 消息列表内容
             Expanded(
               child: _buildMessageList(),
@@ -228,7 +226,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               ],
             ),
             const SizedBox(width: 12),
-            
+
             // 信息
             Expanded(
               child: Column(
@@ -295,10 +293,7 @@ class _MessagesScreenState extends State<MessagesScreen>
       ),
     );
   }
-
-
-
-
+}
 
 /// 聊天页面
 class ChatScreen extends StatefulWidget {
@@ -335,7 +330,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
       _textController.clear();
-      
+
       // 模拟对方回复
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
@@ -420,7 +415,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          
+
           // 输入框
           Container(
             padding: const EdgeInsets.all(12),
@@ -471,7 +466,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(Map<String, dynamic> msg) {
     final isMe = msg['isMe'];
-    
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -500,5 +495,3 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
-
