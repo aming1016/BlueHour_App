@@ -199,4 +199,152 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== 用户认证模块 ====================
+
+  /// 用户注册
+  Future<Map<String, dynamic>> register(String email, String password, String username) async {
+    final response = await _post('/api/auth/register', {
+      'email': email,
+      'password': password,
+      'username': username,
+    });
+    return response;
+  }
+
+  /// 用户登录
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await _post('/api/auth/login', {
+      'email': email,
+      'password': password,
+    });
+    return response;
+  }
+
+  /// 获取当前用户信息
+  Future<Map<String, dynamic>> getCurrentUser(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/auth/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('API GET Error: $e');
+      return {'code': -1, 'message': e.toString()};
+    }
+  }
+
+  // ==================== 主播认证模块 ====================
+
+  /// 申请主播认证
+  Future<Map<String, dynamic>> applyVerification(String token, Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/verification/apply'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('API POST Error: $e');
+      return {'code': -1, 'message': e.toString()};
+    }
+  }
+
+  /// 获取认证状态
+  Future<Map<String, dynamic>> getVerificationStatus(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/verification/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('API GET Error: $e');
+      return {'code': -1, 'message': e.toString()};
+    }
+  }
+
+  // ==================== 直播管理模块 ====================
+
+  /// 创建直播
+  Future<Map<String, dynamic>> createStream({
+    required String token,
+    required String title,
+    required String location,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/streams'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'title': title,
+          'location': location,
+          'latitude': latitude,
+          'longitude': longitude,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('API POST Error: $e');
+      return {'code': -1, 'message': e.toString()};
+    }
+  }
+
+  /// 结束直播
+  Future<Map<String, dynamic>> endStream(String token, String streamId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/streams/$streamId/end'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('API POST Error: $e');
+      return {'code': -1, 'message': e.toString()};
+    }
+  }
 }
