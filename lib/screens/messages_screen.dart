@@ -61,8 +61,9 @@ class _MessagesScreenState extends State<MessagesScreen>
     },
   ];
 
-  // Run Into 留言数据
+  // Run Into 留言数据（合并原Profile邂逅数据）
   final List<Map<String, dynamic>> runIntoMessages = [
+    // 原Messages数据
     {'id': '1', 'name': '小明', 'avatar': '👦', 'text': '有人一起去北京吗？', 'time': '2分钟前'},
     {'id': '2', 'name': '小红', 'avatar': '👧', 'text': '成都火锅求推荐！', 'time': '5分钟前'},
     {'id': '3', 'name': '旅行者', 'avatar': '🧳', 'text': '求西安攻略', 'time': '8分钟前'},
@@ -71,6 +72,13 @@ class _MessagesScreenState extends State<MessagesScreen>
     {'id': '6', 'name': '风景控', 'avatar': '🌄', 'text': '黄山日出绝美', 'time': '20分钟前'},
     {'id': '7', 'name': '古镇爱好者', 'avatar': '🏮', 'text': '乌镇夜景超赞', 'time': '25分钟前'},
     {'id': '8', 'name': '海岛控', 'avatar': '🏝️', 'text': '三亚求攻略', 'time': '30分钟前'},
+    // 原Profile邂逅数据
+    {'id': '9', 'name': '北京达人', 'avatar': '🏛️', 'text': '故宫拍照最佳机位', 'time': '35分钟前'},
+    {'id': '10', 'name': '成都美食家', 'avatar': '🐼', 'text': '成都火锅求组队', 'time': '40分钟前'},
+    {'id': '11', 'name': '西安导游', 'avatar': '🏺', 'text': '求西安深度游攻略', 'time': '45分钟前'},
+    {'id': '12', 'name': '杭州小姐姐', 'avatar': '🌸', 'text': '西湖游船约起来', 'time': '50分钟前'},
+    {'id': '13', 'name': '广州吃货', 'avatar': '🥟', 'text': '广州早茶必吃推荐', 'time': '1小时前'},
+    {'id': '14', 'name': '丽江旅人', 'avatar': '🎒', 'text': '丽江组队中，求伴', 'time': '1小时前'},
   ];
 
   @override
