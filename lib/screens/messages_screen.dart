@@ -332,71 +332,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 跑马灯区域 - 简化版只展示昵称:留言（3行循环）
-  Widget _buildMarqueeArea() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 3行跑马灯（无限循环）
-          ...List.generate(3, (index) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              child: _InfiniteMarqueeRow(
-                rowIndex: index,
-                messages: runIntoMessages,
-                onTap: _showUserProfile,
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSimpleMarqueeItem(Map<String, dynamic> msg) {
-    return GestureDetector(
-      onTap: () {
-        _showUserProfile(msg);
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2E),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-          ),
-        ),
-        child: Text(
-          '${msg['name']}: ${msg['text']}',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.9),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showUserProfile(Map<String, dynamic> user) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => UserProfileSheet(user: user),
-    );
-  }
-
-  void _showPostDialog() {
-    final textController = TextEditingController();
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+  /// 删除的 Run Into 功能代码
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.35,
         decoration: const BoxDecoration(
