@@ -5,6 +5,7 @@ import 'screens/tiktok_home_screen.dart';
 import 'screens/tiktok_discover_screen.dart';
 import 'screens/tiktok_profile_screen.dart';
 import 'screens/wallet_screen.dart';
+import 'screens/messages_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const TiktokHomeScreen(), // 抖音风格全屏直播流
     const TiktokDiscoverScreen(), // 抖音风格发现页
+    const MessagesScreen(), // 消息页面（消息列表 + Run Into）
     const TiktokProfileScreen(), // 抖音风格个人中心（包含钱包入口）
   ];
 
@@ -153,7 +155,8 @@ class _MainScreenState extends State<MainScreen> {
                 _buildNavItem(Icons.home, '首页', 0),
                 _buildNavItem(Icons.explore, '发现', 1),
                 _buildPlusButton(),
-                _buildNavItem(Icons.person, '我', 2),
+                _buildNavItem(Icons.message, '消息', 2),
+                _buildNavItem(Icons.person, '我', 3),
               ],
             ),
           ),
