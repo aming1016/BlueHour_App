@@ -104,9 +104,6 @@ class _TiktokHomeScreenState extends State<TiktokHomeScreen> {
             },
           ),
           
-          // 顶部导航栏
-          _buildTopNavigation(),
-          
           // 右侧交互按钮列
           Positioned(
             right: 8,

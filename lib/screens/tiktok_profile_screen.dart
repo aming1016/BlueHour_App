@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'wallet_screen.dart';
-import 'wallet_screen.dart';
 
 /// 抖音风格个人中心 - 数据看板+作品展示
 class TiktokProfileScreen extends StatefulWidget {
@@ -29,7 +28,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -93,6 +92,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
                       Tab(text: '作品 24'),
                       Tab(text: '喜欢 156'),
                       Tab(text: '收藏 32'),
+                      Tab(text: '邂逅'),
                     ],
                   ),
                 ),
@@ -105,6 +105,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
               _buildWorksGrid(),
               _buildLikedGrid(),
               _buildSavedGrid(),
+              _buildEncounterTab(), // 邂逅tab
             ],
           ),
         ),
@@ -142,16 +143,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
             ),
           ),
           
-          // 返回和菜单按钮
-          Positioned(
-            top: 8,
-            left: 8,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          
+          // 菜单按钮
           Positioned(
             top: 8,
             right: 8,
@@ -611,6 +603,384 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 邂逅Tab - 跑马灯随机发言
+  Widget _buildEncounterTab() {
+    // 模拟随机发言数据
+    final messages = [
+      {'name': '小明', 'avatar': '👦', 'text': '有人一起去北京吗？'},
+      {'name': '小红', 'avatar': '👧', 'text': '成都火锅推荐！'},
+      {'name': '旅行者', 'avatar': '🧳', 'text': '求西安攻略'},
+      {'name': '摄影师', 'avatar': '📷', 'text': '分享西湖美景'},
+      {'name': '吃货', 'avatar': '🍜', 'text': '广州早茶必吃'},
+      {'name': '背包客', 'avatar': '🎒', 'text': '丽江组队中'},
+    ];
+
+    return Container(
+      color: Colors.black,
+      child: Column(
+        children: [
+          // 标题说明
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              '💫 随机邂逅志同道合的旅友',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.7),
+              ),
+            ),
+          ),
+          
+          // 跑马灯区域
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final msg = messages[index];
+                return _buildEncounterItem(
+                  name: msg['name']!,
+                  avatar: msg['avatar']!,
+                  text: msg['text']!,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 邂逅列表项
+  Widget _buildEncounterItem({
+    required String name,
+    required String avatar,
+    required String text,
+  }) {
+    return GestureDetector(
+      onTap: () => _showEncounterProfile(name, avatar, text),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFFF6B35).withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // 头像
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2E),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  avatar,
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            
+            // 信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            
+            // 箭头
+            Icon(
+              Icons.chevron_right,
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 展示邂逅用户半窗Profile
+  void _showEncounterProfile(String name, String avatar, String text) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          children: [
+            // 拖动条
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // 用户信息
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // 头像
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2C2C2E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        avatar,
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 名字
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // 发言内容
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2C2C2E),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '"$text"',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // 操作按钮
+                  Row(
+                    children: [
+                      // 关注按钮
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('已关注 $name'),
+                                backgroundColor: const Color(0xFF34C759),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF6B35),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('关注'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      
+                      // 私信按钮
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showChatDialog(name, avatar);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2C2C2E),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('私信'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 私信对话框
+  void _showChatDialog(String name, String avatar) {
+    final TextEditingController messageController = TextEditingController();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1C1C1E),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              children: [
+                // 头部
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        avatar,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // 聊天内容区域（简化版）
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '开始和 $name 聊天吧',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // 输入框
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: messageController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: '发送消息...',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFF2C2C2E),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        onPressed: () {
+                          if (messageController.text.isNotEmpty) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('消息已发送'),
+                                backgroundColor: Color(0xFF34C759),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.send,
+                          color: Color(0xFFFF6B35),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
