@@ -50,41 +50,21 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // 返回按钮
+            // 顶部标题
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
+              child: Center(
+                child: const Text(
+                  '探索',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  const Spacer(),
-                  const Text(
-                    '探索',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const Spacer(),
-                  const SizedBox(width: 40),
-                ],
+                ),
               ),
             ),
-
+            
             // 旋转地球仪
             Expanded(
               child: Center(
