@@ -107,7 +107,7 @@ class _TiktokHomeScreenState extends State<TiktokHomeScreen> {
           // 右侧交互按钮列
           Positioned(
             right: 8,
-            bottom: 100,
+            bottom: 140,
             child: _buildRightActionButtons(),
           ),
           
@@ -115,7 +115,7 @@ class _TiktokHomeScreenState extends State<TiktokHomeScreen> {
           Positioned(
             left: 16,
             right: 80,
-            bottom: 100,
+            bottom: 140,
             child: _buildBottomInfo(),
           ),
         ],
