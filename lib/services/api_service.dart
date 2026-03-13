@@ -327,7 +327,10 @@ class ApiService {
   }
 
   /// 结束直播
-  Future<Map<String, dynamic>> endStream(String token, String streamId) async {
+  Future<Map<String, dynamic>> endStream({
+    required String token,
+    required String streamId,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/streams/$streamId/end'),
