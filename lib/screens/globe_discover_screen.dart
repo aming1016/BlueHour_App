@@ -34,8 +34,11 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     super.dispose();
   }
 
+  double _startDragY = 0.0;
+
   void _onPanStart(DragStartDetails details) {
     _startDragX = details.globalPosition.dx;
+    _startDragY = details.globalPosition.dy;
     // 记录当前总旋转角度（手动+自动）
     _startRotation = _currentRotation;
     _isManualRotating = true;
@@ -45,9 +48,12 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
 
   void _onPanUpdate(DragUpdateDetails details) {
     final dx = details.globalPosition.dx - _startDragX;
+    final dy = details.globalPosition.dy - _startDragY;
     setState(() {
-      // 基于起始角度加上拖动的增量
-      _currentRotation = _startRotation + dx * 0.005;
+      // 综合X和Y方向的拖动（支持斜向）
+      // 水平拖动主要影响旋转，垂直拖动辅助影响
+      final totalMove = dx + dy * 0.3;
+      _currentRotation = _startRotation + totalMove * 0.008;
     });
   }
 
