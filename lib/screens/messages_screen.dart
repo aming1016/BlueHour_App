@@ -405,99 +405,6 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-/// 无限循环跑马灯行
-class _InfiniteMarqueeRow extends StatefulWidget {
-  final int rowIndex;
-  final List<Map<String, dynamic>> messages;
-  final Function(Map<String, dynamic>) onTap;
-
-  const _InfiniteMarqueeRow({
-    required this.rowIndex,
-    required this.messages,
-    required this.onTap,
-  });
-
-  @override
-  State<_InfiniteMarqueeRow> createState() => _InfiniteMarqueeRowState();
-}
-
-class _InfiniteMarqueeRowState extends State<_InfiniteMarqueeRow>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 20 + widget.rowIndex * 5),
-    )..repeat(); // 无限循环
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 为每行分配不同的消息（3行）
-    final rowMessages = widget.messages
-        .where((m) => widget.messages.indexOf(m) % 3 == widget.rowIndex)
-        .toList();
-
-    // 复制多份确保无缝循环
-    final displayMessages = [
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages,
-      ...rowMessages
-    ];
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final totalWidth = displayMessages.length * 200.0;
-        final offset = -(_controller.value * totalWidth) % (totalWidth / 2);
-
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: Row(
-            children: displayMessages.map((msg) => _buildItem(msg)).toList(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildItem(Map<String, dynamic> msg) {
-    return GestureDetector(
-      onTap: () => widget.onTap(msg),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2E),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-          ),
-        ),
-        child: Text(
-          '${msg['name']}: ${msg['text']}',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.9),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
   Widget _buildSimpleMarqueeItem(Map<String, dynamic> msg) {
     return GestureDetector(
       onTap: () {
@@ -966,6 +873,94 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 无限循环跑马灯行
+class _InfiniteMarqueeRow extends StatefulWidget {
+  final int rowIndex;
+  final List<Map<String, dynamic>> messages;
+  final Function(Map<String, dynamic>) onTap;
+
+  const _InfiniteMarqueeRow({
+    required this.rowIndex,
+    required this.messages,
+    required this.onTap,
+  });
+
+  @override
+  State<_InfiniteMarqueeRow> createState() => _InfiniteMarqueeRowState();
+}
+
+class _InfiniteMarqueeRowState extends State<_InfiniteMarqueeRow>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 20 + widget.rowIndex * 5),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rowMessages = widget.messages
+        .where((m) => widget.messages.indexOf(m) % 3 == widget.rowIndex)
+        .toList();
+
+    final displayMessages = [
+      ...rowMessages,
+      ...rowMessages,
+      ...rowMessages,
+      ...rowMessages,
+      ...rowMessages
+    ];
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final totalWidth = displayMessages.length * 200.0;
+        final offset = -(_controller.value * totalWidth) % (totalWidth / 2);
+
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: Row(
+            children: displayMessages
+                .map((msg) => GestureDetector(
+                      onTap: () => widget.onTap(msg),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C2C2E),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Text(
+                          '${msg['name']}: ${msg['text']}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        );
+      },
     );
   }
 }
