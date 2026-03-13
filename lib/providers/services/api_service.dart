@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // 后端服务器地址（虚拟机部署）
-  static const String baseUrl = 'http://192.168.124.9:3000';
+  // 后端服务器地址（本地开发）
+  static const String baseUrl = 'http://localhost:3000';
   
   final http.Client _client = http.Client();
   

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // 开发环境基础URL（虚拟机）
   static const String baseUrl = 'http://192.168.31.249:3000';
-  
+
   // 单例模式
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -18,7 +18,7 @@ class ApiService {
         Uri.parse('$baseUrl$endpoint'),
         headers: {'Content-Type': 'application/json'},
       );
-      
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -38,7 +38,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-      
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -48,6 +48,44 @@ class ApiService {
       print('API POST Error: $e');
       return {'code': -1, 'message': e.toString()};
     }
+  }
+
+  // ==================== 首页模块 ====================
+
+  /// 获取Banner列表
+  Future<List<dynamic>> getBanners() async {
+    final response = await _get('/api/banners');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取关注的主播列表
+  Future<List<dynamic>> getFollowedStreamers() async {
+    final response = await _get('/api/followed-streamers');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取混合内容流
+  Future<List<dynamic>> getMixedContent({String filter = 'recommend', int limit = 20}) async {
+    final response = await _get('/api/mixed-content?filter=$filter&limit=$limit');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
+  }
+
+  /// 获取快捷入口配置
+  Future<List<dynamic>> getQuickEntries() async {
+    final response = await _get('/api/quick-entries');
+    if (response['code'] == 0) {
+      return response['data'] ?? [];
+    }
+    return [];
   }
 
   // ==================== 直播模块 ====================
@@ -160,43 +198,5 @@ class ApiService {
     } catch (e) {
       return false;
     }
-  }
-
-  // ==================== 首页模块 ====================
-
-  /// 获取Banner列表
-  Future<List<dynamic>> getBanners() async {
-    final response = await _get('/api/banners');
-    if (response['code'] == 0) {
-      return response['data'] ?? [];
-    }
-    return [];
-  }
-
-  /// 获取关注的主播列表
-  Future<List<dynamic>> getFollowedStreamers() async {
-    final response = await _get('/api/followed-streamers');
-    if (response['code'] == 0) {
-      return response['data'] ?? [];
-    }
-    return [];
-  }
-
-  /// 获取混合内容流
-  Future<List<dynamic>> getMixedContent({String filter = 'recommend', int limit = 20}) async {
-    final response = await _get('/api/mixed-content?filter=$filter&limit=$limit');
-    if (response['code'] == 0) {
-      return response['data'] ?? [];
-    }
-    return [];
-  }
-
-  /// 获取快捷入口配置
-  Future<List<dynamic>> getQuickEntries() async {
-    final response = await _get('/api/quick-entries');
-    if (response['code'] == 0) {
-      return response['data'] ?? [];
-    }
-    return [];
   }
 }

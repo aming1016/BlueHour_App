@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
-import 'screens/home_screen.dart';
-import 'screens/new_home_screen.dart';
-import 'screens/discover_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/tiktok_home_screen.dart';
+import 'screens/tiktok_discover_screen.dart';
+import 'screens/tiktok_profile_screen.dart';
 import 'screens/wallet_screen.dart';
 
 void main() async {
@@ -32,12 +31,14 @@ class TravelApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFFFF6B35),
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: Colors.black,
         fontFamily: 'Inter',
         useMaterial3: true,
+        brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFFF6B35),
           primary: const Color(0xFFFF6B35),
+          brightness: Brightness.dark,
         ),
       ),
       home: const MainScreen(),
@@ -56,11 +57,11 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const NewHomeScreen(), // Visily设计的新首页
-    const DiscoverScreen(),
+    const TiktokHomeScreen(), // 抖音风格全屏直播流
+    const TiktokDiscoverScreen(), // 抖音风格发现页
     const SizedBox(), // Placeholder for center button
     const WalletScreen(),
-    const ProfileScreen(),
+    const TiktokProfileScreen(), // 抖音风格个人中心
   ];
 
   void _onItemTapped(int index) {
@@ -82,6 +83,53 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlusButton() {
+    return GestureDetector(
+      onTap: () => _onItemTapped(2),
+      child: Container(
+        width: 44,
+        height: 30,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF00D2FF), Color(0xFF3A7BD5)],
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,58 +137,34 @@ class _MainScreenState extends State<MainScreen> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex == 4 ? 4 : _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFFF6B35),
-        unselectedItemColor: const Color(0xFF6B7280),
-        backgroundColor: Colors.white,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black.withOpacity(0.8),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Discover',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B35),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 28,
-              ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(Icons.home, '首页', 0),
+                _buildNavItem(Icons.explore, '发现', 1),
+                _buildPlusButton(),
+                _buildNavItem(Icons.account_balance_wallet, '钱包', 3),
+                _buildNavItem(Icons.person, '我', 4),
+              ],
             ),
-            label: '',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Wallet',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Me',
-          ),
-        ],
+        ),
       ),
     );
   }
