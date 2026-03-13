@@ -8,23 +8,19 @@ class TiktokDiscoverScreen extends StatefulWidget {
   State<TiktokDiscoverScreen> createState() => _TiktokDiscoverScreenState();
 }
 
-class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _rotationController;
+class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
+  double _rotationAngle = 0.0;
+  double _startAngle = 0.0;
 
-  @override
-  void initState() {
-    super.initState();
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    )..repeat();
+  void _onPanStart(DragStartDetails details) {
+    _startAngle = _rotationAngle;
   }
 
-  @override
-  void dispose() {
-    _rotationController.dispose();
-    super.dispose();
+  void _onPanUpdate(DragUpdateDetails details) {
+    setState(() {
+      // 根据水平拖动距离计算旋转角度
+      _rotationAngle = _startAngle + details.delta.dx * 0.01;
+    });
   }
 
   @override
@@ -69,15 +65,15 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen>
               ),
             ),
             
-            // 旋转地球仪
+            // 旋转地球仪（可手动拖动）
             Expanded(
               child: Center(
-                child: AnimatedBuilder(
-                  animation: _rotationController,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      angle: _rotationController.value * 2 * 3.14159,
-                      child: Container(
+                child: GestureDetector(
+                  onPanStart: _onPanStart,
+                  onPanUpdate: _onPanUpdate,
+                  child: Transform.rotate(
+                    angle: _rotationAngle,
+                    child: Container(
                         width: 280,
                         height: 280,
                         decoration: BoxDecoration(
@@ -164,8 +160,8 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen>
                           ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ),
