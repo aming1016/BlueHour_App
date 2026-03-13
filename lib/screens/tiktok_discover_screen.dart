@@ -106,12 +106,31 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
     );
   }
 
-  /// 搜索栏
+  /// 搜索栏（带返回按钮）
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
+          // 返回按钮
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
           // 搜索框
           Expanded(
             child: Container(
@@ -152,9 +171,9 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
               ),
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // 扫码按钮
           Container(
             padding: const EdgeInsets.all(10),
