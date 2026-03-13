@@ -373,9 +373,9 @@ class AppState extends ChangeNotifier {
     // 初始化评论列表
     if (_comments.isEmpty) {
       _comments = [
-        {'username': '游客A', 'text': '主播好！', 'gift': null},
-        {'username': '游客B', 'text': '风景真美', 'gift': null},
-        {'username': '游客C', 'text': '下次想去', 'gift': null},
+        Comment(username: '游客A', text: '主播好！', gift: null, timestamp: DateTime.now()),
+        Comment(username: '游客B', text: '风景真美', gift: null, timestamp: DateTime.now()),
+        Comment(username: '游客C', text: '下次想去', gift: null, timestamp: DateTime.now()),
       ];
     }
   }
