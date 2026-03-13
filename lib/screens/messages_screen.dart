@@ -83,10 +83,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             // 顶部标题栏
             _buildHeader(),
 
-            // Tab 栏（仅消息列表）
-            _buildTabBar(),
-
-            // 消息列表内容
+            // 消息列表内容（上移，减小顶部间距）
             Expanded(
               child: _buildMessageList(),
             ),
@@ -123,18 +120,6 @@ class _MessagesScreenState extends State<MessagesScreen>
               size: 24,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// Tab 栏（仅图标）
-  Widget _buildTabBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: const Row(
-        children: [
-          Icon(Icons.message, size: 20, color: Colors.white),
         ],
       ),
     );
