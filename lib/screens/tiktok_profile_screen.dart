@@ -29,7 +29,7 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -93,7 +93,6 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
                       Tab(text: '作品'),
                       Tab(text: '喜欢'),
                       Tab(text: '收藏'),
-                      Tab(text: '✨ 邂逅'),
                     ],
                   ),
                 ),
@@ -106,7 +105,6 @@ class _TiktokProfileScreenState extends State<TiktokProfileScreen>
               _buildWorksGrid(),
               _buildLikedGrid(),
               _buildSavedGrid(),
-              _buildEncounterTab(), // 邂逅tab
             ],
           ),
         ),

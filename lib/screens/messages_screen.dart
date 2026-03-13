@@ -386,18 +386,16 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  /// 跑马灯区域
+  /// 跑马灯区域 - 简化版只展示昵称:留言
   Widget _buildMarqueeArea() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Stack(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
         children: [
           // 多行跑马灯
-          ...List.generate(4, (index) {
-            return Positioned(
-              top: index * 90.0,
-              left: 0,
-              right: 0,
+          ...List.generate(5, (index) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
               child: _buildMarqueeRow(index),
             );
           }),
@@ -409,19 +407,19 @@ class _MessagesScreenState extends State<MessagesScreen>
   Widget _buildMarqueeRow(int rowIndex) {
     // 为每行分配不同的消息
     final rowMessages = runIntoMessages
-        .where((m) => runIntoMessages.indexOf(m) % 4 == rowIndex)
+        .where((m) => runIntoMessages.indexOf(m) % 5 == rowIndex)
         .toList();
 
     return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: -200),
-      duration: Duration(seconds: 15 + rowIndex * 3),
+      tween: Tween<double>(begin: 0, end: -300),
+      duration: Duration(seconds: 12 + rowIndex * 2),
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(value, 0),
           child: Row(
             children: [
-              ...rowMessages.map((msg) => _buildRunIntoCard(msg)),
-              ...rowMessages.map((msg) => _buildRunIntoCard(msg)),
+              ...rowMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
+              ...rowMessages.map((msg) => _buildSimpleMarqueeItem(msg)),
             ],
           ),
         );
@@ -429,82 +427,27 @@ class _MessagesScreenState extends State<MessagesScreen>
     );
   }
 
-  Widget _buildRunIntoCard(Map<String, dynamic> msg) {
+  Widget _buildSimpleMarqueeItem(Map<String, dynamic> msg) {
     return GestureDetector(
       onTap: () {
         _showUserProfile(msg);
       },
       child: Container(
-        width: 180,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF2C2C2E),
-              const Color(0xFF1C1C1E),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: Colors.white.withOpacity(0.1),
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B35).withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      msg['avatar'],
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    msg['name'],
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              msg['text'],
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              msg['time'],
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withOpacity(0.4),
-              ),
-            ),
-          ],
+        child: Text(
+          '${msg['name']}: ${msg['text']}',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white.withOpacity(0.9),
+          ),
         ),
       ),
     );
