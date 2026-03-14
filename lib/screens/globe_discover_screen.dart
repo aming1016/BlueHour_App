@@ -1,5 +1,25 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
+/// 冒泡留言数据
+class BubbleMessage {
+  final String avatar;
+  final String nickname;
+  final String message;
+  final double angle; // 在地球上的角度位置
+  final double distance; // 距离地球中心的距离
+  final String id;
+  
+  BubbleMessage({
+    required this.avatar,
+    required this.nickname,
+    required this.message,
+    required this.angle,
+    required this.distance,
+    required this.id,
+  });
+}
 
 /// 地球仪发现页面 - 2D地球旋转
 class GlobeDiscoverScreen extends StatefulWidget {
@@ -21,6 +41,23 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   
   // 缓存大陆 widgets，避免每帧重建
   late final List<Widget> _continents;
+  
+  // 冒泡留言相关
+  final List<BubbleMessage> _bubbles = [];
+  double _lastRotation = 0.0;
+  static const double _rotationThreshold = 0.5; // 旋转超过这个值就更新冒泡
+  
+  // 模拟用户数据
+  final List<Map<String, String>> _mockUsers = [
+    {'avatar': '👨‍🦱', 'nickname': '旅行达人', 'msg': '故宫太美了！'},
+    {'avatar': '👩‍🦰', 'nickname': '小王', 'msg': '成都火锅绝了'},
+    {'avatar': '🧑‍🦲', 'nickname': '摄影师', 'msg': '西湖日落超赞'},
+    {'avatar': '👱‍♀️', 'nickname': '美食家', 'msg': '西安肉夹馍好吃'},
+    {'avatar': '👨‍🦳', 'nickname': '背包客', 'msg': '长城打卡成功'},
+    {'avatar': '👩‍🦳', 'nickname': '文艺青年', 'msg': '丽江古城很浪漫'},
+    {'avatar': '🧑‍🦱', 'nickname': '探险家', 'msg': '九寨沟风景如画'},
+    {'avatar': '👱‍♂️', 'nickname': '吃货', 'msg': '广州早茶必吃'},
+  ];
 
   @override
   void initState() {
@@ -28,9 +65,12 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     // 预创建大陆 widgets
     _continents = _buildContinents2D();
     
+    // 初始化冒泡
+    _generateBubbles();
+    
     _autoRotationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 30), // 减慢自动旋转速度
+      duration: const Duration(seconds: 30),
     )..addListener(_onAnimationUpdate);
     
     // 延迟启动自动旋转
@@ -43,8 +83,49 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   
   void _onAnimationUpdate() {
     if (!mounted || _isManualRotating || _isDragging) return;
+    final newRotation = _autoRotationController.value * 2 * 3.14159;
+    _checkRotationAndUpdateBubbles(newRotation);
     setState(() {
-      _currentRotation = _autoRotationController.value * 2 * 3.14159;
+      _currentRotation = newRotation;
+    });
+  }
+  
+  /// 检查旋转角度，超过阈值时更新冒泡
+  void _checkRotationAndUpdateBubbles(double newRotation) {
+    final rotationDelta = (newRotation - _lastRotation).abs();
+    if (rotationDelta > _rotationThreshold) {
+      _lastRotation = newRotation;
+      _generateBubbles();
+    }
+  }
+  
+  /// 生成新的冒泡留言
+  void _generateBubbles() {
+    final random = math.Random();
+    final newBubbles = <BubbleMessage>[];
+    
+    // 随机生成3-5个冒泡
+    final bubbleCount = 3 + random.nextInt(3);
+    
+    for (int i = 0; i < bubbleCount; i++) {
+      final user = _mockUsers[random.nextInt(_mockUsers.length)];
+      // 在地球表面随机位置（考虑3D球面效果）
+      final angle = random.nextDouble() * 2 * math.pi;
+      final distance = 0.6 + random.nextDouble() * 0.25; // 距离中心60%-85%
+      
+      newBubbles.add(BubbleMessage(
+        avatar: user['avatar']!,
+        nickname: user['nickname']!,
+        message: user['msg']!,
+        angle: angle,
+        distance: distance,
+        id: '${DateTime.now().millisecondsSinceEpoch}_$i',
+      ));
+    }
+    
+    setState(() {
+      _bubbles.clear();
+      _bubbles.addAll(newBubbles);
     });
   }
 
@@ -68,10 +149,10 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
 
   void _onPanUpdate(DragUpdateDetails details) {
     final dx = details.globalPosition.dx - _startDragX;
-    final dy = details.globalPosition.dy - _startDragY;
+    final newRotation = _startRotation + dx * 0.005;
+    _checkRotationAndUpdateBubbles(newRotation);
     setState(() {
-      // 优化：只响应水平拖动，更流畅
-      _currentRotation = _startRotation + dx * 0.005;
+      _currentRotation = newRotation;
     });
   }
 
@@ -185,6 +266,9 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                                 ],
                               ),
                             ),
+                            
+                            // 冒泡留言层
+                            ..._buildBubbleWidgets(),
                           ],
                         ),
                       ),
@@ -193,31 +277,39 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                 ),
               ),
             ),
-
-            // 底部提示
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const Text(
-                    '🌍',
-                    style: TextStyle(fontSize: 32),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '拖动地球旋转探索',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            
+            // 底部留白（保持布局平衡）
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+  
+  /// 构建冒泡留言 widgets
+  List<Widget> _buildBubbleWidgets() {
+    return _bubbles.map((bubble) {
+      // 计算冒泡位置（考虑当前旋转角度）
+      final adjustedAngle = bubble.angle - _currentRotation;
+      final x = 140 + math.cos(adjustedAngle) * bubble.distance * 140;
+      final y = 140 + math.sin(adjustedAngle) * bubble.distance * 140;
+      
+      // 判断是否在地球背面（简单判断：根据角度和旋转）
+      final isVisible = math.cos(adjustedAngle) > -0.3;
+      
+      if (!isVisible) return const SizedBox.shrink();
+      
+      return Positioned(
+        left: x - 60,
+        top: y - 25,
+        child: BubbleWidget(
+          key: ValueKey(bubble.id),
+          avatar: bubble.avatar,
+          nickname: bubble.nickname,
+          message: bubble.message,
+        ),
+      );
+    }).toList();
   }
 
   List<Widget> _buildContinents2D() {
@@ -292,5 +384,127 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
       ),
     );
   }
+}
 
+/// 冒泡留言组件 - 带入场动画
+class BubbleWidget extends StatefulWidget {
+  final String avatar;
+  final String nickname;
+  final String message;
+  
+  const BubbleWidget({
+    super.key,
+    required this.avatar,
+    required this.nickname,
+    required this.message,
+  });
+
+  @override
+  State<BubbleWidget> createState() => _BubbleWidgetState();
+}
+
+class _BubbleWidgetState extends State<BubbleWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    );
+    
+    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+    
+    // 延迟启动动画，产生错落感
+    Future.delayed(Duration(milliseconds: math.Random().nextInt(300)), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacityAnimation.value,
+          child: Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 头像
+            Text(
+              widget.avatar,
+              style: const TextStyle(fontSize: 20),
+            ),
+            const SizedBox(width: 6),
+            // 昵称和留言
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.nickname,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4A90D9),
+                    ),
+                  ),
+                  Text(
+                    widget.message,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF333333),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
