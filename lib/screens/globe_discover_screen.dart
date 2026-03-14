@@ -7,16 +7,16 @@ class BubbleMessage {
   final String avatar;
   final String nickname;
   final String message;
-  final double angle; // 在地球上的角度位置
-  final double distance; // 距离地球中心的距离
+  final double x; // 屏幕X坐标
+  final double y; // 屏幕Y坐标
   final String id;
   
   BubbleMessage({
     required this.avatar,
     required this.nickname,
     required this.message,
-    required this.angle,
-    required this.distance,
+    required this.x,
+    required this.y,
     required this.id,
   });
 }
@@ -35,7 +35,6 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   double _currentRotation = 0.0;
   double _startRotation = 0.0;
   double _startDragX = 0.0;
-  bool _isManualRotating = false;
   bool _isDragging = false;
   Timer? _resumeTimer;
   
@@ -45,7 +44,10 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   // 冒泡留言相关
   final List<BubbleMessage> _bubbles = [];
   double _lastRotation = 0.0;
-  static const double _rotationThreshold = 0.5; // 旋转超过这个值就更新冒泡
+  static const double _rotationThreshold = 0.5;
+  
+  // 地球仪中心位置和半径
+  final double _globeRadius = 140;
   
   // 模拟用户数据
   final List<Map<String, String>> _mockUsers = [
@@ -62,35 +64,34 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   @override
   void initState() {
     super.initState();
-    // 预创建大陆 widgets
     _continents = _buildContinents2D();
     
-    // 初始化冒泡
-    _generateBubbles();
+    // 延迟初始化冒泡（等布局完成后）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _generateBubbles();
+    });
     
     _autoRotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 30),
     )..addListener(_onAnimationUpdate);
     
-    // 延迟启动自动旋转
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && !_isManualRotating) {
+      if (mounted && !_isDragging) {
         _autoRotationController.repeat();
       }
     });
   }
   
   void _onAnimationUpdate() {
-    if (!mounted || _isManualRotating || _isDragging) return;
-    final newRotation = _autoRotationController.value * 2 * 3.14159;
+    if (!mounted || _isDragging) return;
+    final newRotation = _autoRotationController.value * 2 * math.pi;
     _checkRotationAndUpdateBubbles(newRotation);
     setState(() {
       _currentRotation = newRotation;
     });
   }
   
-  /// 检查旋转角度，超过阈值时更新冒泡
   void _checkRotationAndUpdateBubbles(double newRotation) {
     final rotationDelta = (newRotation - _lastRotation).abs();
     if (rotationDelta > _rotationThreshold) {
@@ -99,28 +100,52 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     }
   }
   
-  /// 生成新的冒泡留言
   void _generateBubbles() {
     final random = math.Random();
     final newBubbles = <BubbleMessage>[];
     
-    // 随机生成3-5个冒泡
+    // 获取地球仪在屏幕中的位置
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    
+    final size = renderBox.size;
+    final globeCenterX = size.width / 2;
+    final globeCenterY = size.height * 0.35; // 地球仪中心在屏幕35%位置
+    
     final bubbleCount = 3 + random.nextInt(3);
     
     for (int i = 0; i < bubbleCount; i++) {
       final user = _mockUsers[random.nextInt(_mockUsers.length)];
-      // 在地球表面随机位置（考虑3D球面效果）
-      final angle = random.nextDouble() * 2 * math.pi;
-      final distance = 0.6 + random.nextDouble() * 0.25; // 距离中心60%-85%
       
-      newBubbles.add(BubbleMessage(
-        avatar: user['avatar']!,
-        nickname: user['nickname']!,
-        message: user['msg']!,
-        angle: angle,
-        distance: distance,
-        id: '${DateTime.now().millisecondsSinceEpoch}_$i',
-      ));
+      // 在地球周围生成位置（但不覆盖地球中心）
+      double x, y;
+      bool validPosition = false;
+      int attempts = 0;
+      
+      while (!validPosition && attempts < 50) {
+        final angle = random.nextDouble() * 2 * math.pi;
+        final distance = _globeRadius + 20 + random.nextDouble() * 80;
+        
+        x = globeCenterX + math.cos(angle) * distance;
+        y = globeCenterY + math.sin(angle) * distance;
+        
+        // 确保在屏幕范围内且不太靠边
+        if (x > 60 && x < size.width - 60 && y > 100 && y < size.height - 100) {
+          validPosition = true;
+        }
+        attempts++;
+      }
+      
+      if (validPosition) {
+        newBubbles.add(BubbleMessage(
+          avatar: user['avatar']!,
+          nickname: user['nickname']!,
+          message: user['msg']!,
+          x: x,
+          y: y,
+          id: '${DateTime.now().millisecondsSinceEpoch}_$i',
+        ));
+      }
     }
     
     setState(() {
@@ -158,10 +183,9 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
 
   void _onPanEnd(DragEndDetails details) {
     _isDragging = false;
-    // 1.5秒后恢复自动旋转
     _resumeTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted && !_isDragging) {
-        _autoRotationController.forward(from: _currentRotation / (2 * 3.14159));
+        _autoRotationController.forward(from: _currentRotation / (2 * math.pi));
         _autoRotationController.repeat();
       }
     });
@@ -172,136 +196,128 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // 顶部标题
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(
-                child: Text(
-                  '探索',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            // 主内容列
+            Column(
+              children: [
+                // 顶部标题
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      '探索',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            // 旋转地球仪（2D球型）- 优化版
-            Expanded(
-              child: Center(
-                child: GestureDetector(
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
-                  child: RepaintBoundary(
-                    child: Transform.rotate(
-                      angle: _currentRotation,
-                      child: Container(
-                        width: 280,
-                        height: 280,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Color(0xFF4A90D9),
-                              Color(0xFF1E3A5F),
-                            ],
-                            center: Alignment(-0.3, -0.3),
-                          ),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // 地球圆形剪切
-                            ClipOval(
-                              child: Container(
-                                width: 280,
-                                height: 280,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      const Color(0xFF4A90D9).withOpacity(0.8),
-                                      const Color(0xFF2E7D32).withOpacity(0.6),
-                                      const Color(0xFF1E3A5F).withOpacity(0.9),
+                // 地球仪 - 向上移动，使用 Padding 调整位置
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Center(
+                    child: GestureDetector(
+                      onPanStart: _onPanStart,
+                      onPanUpdate: _onPanUpdate,
+                      onPanEnd: _onPanEnd,
+                      child: RepaintBoundary(
+                        child: Transform.rotate(
+                          angle: _currentRotation,
+                          child: Container(
+                            width: 280,
+                            height: 280,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Color(0xFF4A90D9),
+                                  Color(0xFF1E3A5F),
+                                ],
+                                center: Alignment(-0.3, -0.3),
+                              ),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // 地球圆形剪切
+                                ClipOval(
+                                  child: Container(
+                                    width: 280,
+                                    height: 280,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          const Color(0xFF4A90D9).withOpacity(0.8),
+                                          const Color(0xFF2E7D32).withOpacity(0.6),
+                                          const Color(0xFF1E3A5F).withOpacity(0.9),
+                                        ],
+                                      ),
+                                    ),
+                                    child: Stack(
+                                      children: _continents,
+                                    ),
+                                  ),
+                                ),
+
+                                // 球型光晕效果
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        Colors.white.withOpacity(0.15),
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.3),
+                                      ],
+                                      center: const Alignment(-0.3, -0.3),
+                                      radius: 0.8,
+                                    ),
+                                  ),
+                                ),
+
+                                // 边框光晕
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF4A90D9).withOpacity(0.4),
+                                        blurRadius: 40,
+                                        spreadRadius: 5,
+                                      ),
                                     ],
                                   ),
                                 ),
-                                child: Stack(
-                                  children: _continents, // 使用缓存的大陆
-                                ),
-                              ),
+                              ],
                             ),
-
-                            // 球型光晕效果（让看起来是3D球型）
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    Colors.white.withOpacity(0.15),
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.3),
-                                  ],
-                                  center: const Alignment(-0.3, -0.3),
-                                  radius: 0.8,
-                                ),
-                              ),
-                            ),
-
-                            // 边框光晕
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF4A90D9).withOpacity(0.4),
-                                    blurRadius: 40,
-                                    spreadRadius: 5,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            // 冒泡留言层
-                            ..._buildBubbleWidgets(),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
             
-            // 底部留白（保持布局平衡）
-            const SizedBox(height: 24),
+            // 冒泡留言层 - 在地球仪外面，不随地球转动
+            ..._buildBubbleWidgets(),
           ],
         ),
       ),
     );
   }
   
-  /// 构建冒泡留言 widgets
   List<Widget> _buildBubbleWidgets() {
     return _bubbles.map((bubble) {
-      // 计算冒泡位置（考虑当前旋转角度）
-      final adjustedAngle = bubble.angle - _currentRotation;
-      final x = 140 + math.cos(adjustedAngle) * bubble.distance * 140;
-      final y = 140 + math.sin(adjustedAngle) * bubble.distance * 140;
-      
-      // 判断是否在地球背面（简单判断：根据角度和旋转）
-      final isVisible = math.cos(adjustedAngle) > -0.3;
-      
-      if (!isVisible) return const SizedBox.shrink();
-      
       return Positioned(
-        left: x - 60,
-        top: y - 25,
+        left: bubble.x - 60,
+        top: bubble.y - 25,
         child: BubbleWidget(
           key: ValueKey(bubble.id),
           avatar: bubble.avatar,
@@ -313,56 +329,15 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   }
 
   List<Widget> _buildContinents2D() {
-    // 2D大陆形状（简化版圆形/椭圆）- 预创建避免重建
     return [
-      // 亚洲
-      Positioned(
-        top: 50,
-        right: 30,
-        child: _buildContinentWidget(90, 70, const Color(0xFF2E7D32)),
-      ),
-      // 欧洲
-      Positioned(
-        top: 60,
-        left: 70,
-        child: _buildContinentWidget(50, 40, const Color(0xFF388E3C)),
-      ),
-      // 非洲
-      Positioned(
-        top: 100,
-        left: 80,
-        child: _buildContinentWidget(55, 85, const Color(0xFF2E7D32)),
-      ),
-      // 北美
-      Positioned(
-        top: 40,
-        left: 20,
-        child: _buildContinentWidget(80, 60, const Color(0xFF388E3C)),
-      ),
-      // 南美
-      Positioned(
-        bottom: 50,
-        left: 60,
-        child: _buildContinentWidget(50, 80, const Color(0xFF2E7D32)),
-      ),
-      // 澳洲
-      Positioned(
-        bottom: 70,
-        right: 50,
-        child: _buildContinentWidget(60, 45, const Color(0xFF388E3C)),
-      ),
-      // 南极（底部）
-      Positioned(
-        bottom: 0,
-        left: 90,
-        child: _buildContinentWidget(100, 40, const Color(0xFFFFFFFF).withOpacity(0.8)),
-      ),
-      // 格陵兰
-      Positioned(
-        top: 20,
-        left: 60,
-        child: _buildContinentWidget(35, 25, const Color(0xFFFFFFFF).withOpacity(0.7)),
-      ),
+      Positioned(top: 50, right: 30, child: _buildContinentWidget(90, 70, const Color(0xFF2E7D32))),
+      Positioned(top: 60, left: 70, child: _buildContinentWidget(50, 40, const Color(0xFF388E3C))),
+      Positioned(top: 100, left: 80, child: _buildContinentWidget(55, 85, const Color(0xFF2E7D32))),
+      Positioned(top: 40, left: 20, child: _buildContinentWidget(80, 60, const Color(0xFF388E3C))),
+      Positioned(bottom: 50, left: 60, child: _buildContinentWidget(50, 80, const Color(0xFF2E7D32))),
+      Positioned(bottom: 70, right: 50, child: _buildContinentWidget(60, 45, const Color(0xFF388E3C))),
+      Positioned(bottom: 0, left: 90, child: _buildContinentWidget(100, 40, const Color(0xFFFFFFFF).withOpacity(0.8))),
+      Positioned(top: 20, left: 60, child: _buildContinentWidget(35, 25, const Color(0xFFFFFFFF).withOpacity(0.7))),
     ];
   }
   
@@ -375,10 +350,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
           color: color.withOpacity(0.7),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-            ),
+            BoxShadow(color: color.withOpacity(0.3), blurRadius: 8),
           ],
         ),
       ),
@@ -429,7 +401,6 @@ class _BubbleWidgetState extends State<BubbleWidget>
       ),
     );
     
-    // 延迟启动动画，产生错落感
     Future.delayed(Duration(milliseconds: math.Random().nextInt(300)), () {
       if (mounted) _controller.forward();
     });
@@ -470,13 +441,11 @@ class _BubbleWidgetState extends State<BubbleWidget>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 头像
             Text(
               widget.avatar,
               style: const TextStyle(fontSize: 20),
             ),
             const SizedBox(width: 6),
-            // 昵称和留言
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
