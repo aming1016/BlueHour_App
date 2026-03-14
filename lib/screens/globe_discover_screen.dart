@@ -7,16 +7,16 @@ class BubbleMessage {
   final String avatar;
   final String nickname;
   final String message;
-  final double x; // 屏幕X坐标
-  final double y; // 屏幕Y坐标
+  final double angle; // 相对于地球仪中心的角度
+  final double distance; // 距离地球仪中心的比例 (0-1)
   final String id;
   
   BubbleMessage({
     required this.avatar,
     required this.nickname,
     required this.message,
-    required this.x,
-    required this.y,
+    required this.angle,
+    required this.distance,
     required this.id,
   });
 }
@@ -46,7 +46,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   double _lastRotation = 0.0;
   static const double _rotationThreshold = 0.5;
   
-  // 地球仪中心位置和半径
+  // 地球仪半径
   final double _globeRadius = 140;
   
   // 模拟用户数据
@@ -66,9 +66,9 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     super.initState();
     _continents = _buildContinents2D();
     
-    // 延迟初始化冒泡（等布局完成后）
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _generateBubbles();
+    // 延迟初始化冒泡
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) _generateBubbles();
     });
     
     _autoRotationController = AnimationController(
@@ -104,49 +104,24 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     final random = math.Random();
     final newBubbles = <BubbleMessage>[];
     
-    // 获取地球仪在屏幕中的位置
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-    
-    final size = renderBox.size;
-    final globeCenterX = size.width / 2;
-    final globeCenterY = size.height * 0.35; // 地球仪中心在屏幕35%位置
-    
     final bubbleCount = 3 + random.nextInt(3);
     
     for (int i = 0; i < bubbleCount; i++) {
       final user = _mockUsers[random.nextInt(_mockUsers.length)];
       
-      // 在地球周围生成位置（但不覆盖地球中心）
-      double x = 0;
-      double y = 0;
-      bool validPosition = false;
-      int attempts = 0;
+      // 在地球仪表面随机位置（角度和距离）
+      final angle = random.nextDouble() * 2 * math.pi;
+      // 距离中心 30%-80% 的区域（确保在地球仪内，但不在正中心）
+      final distance = 0.3 + random.nextDouble() * 0.5;
       
-      while (!validPosition && attempts < 50) {
-        final angle = random.nextDouble() * 2 * math.pi;
-        final distance = _globeRadius + 20 + random.nextDouble() * 80;
-        
-        x = globeCenterX + math.cos(angle) * distance;
-        y = globeCenterY + math.sin(angle) * distance;
-        
-        // 确保在屏幕范围内且不太靠边
-        if (x > 60 && x < size.width - 60 && y > 100 && y < size.height - 100) {
-          validPosition = true;
-        }
-        attempts++;
-      }
-      
-      if (validPosition) {
-        newBubbles.add(BubbleMessage(
-          avatar: user['avatar']!,
-          nickname: user['nickname']!,
-          message: user['msg']!,
-          x: x,
-          y: y,
-          id: '${DateTime.now().millisecondsSinceEpoch}_$i',
-        ));
-      }
+      newBubbles.add(BubbleMessage(
+        avatar: user['avatar']!,
+        nickname: user['nickname']!,
+        message: user['msg']!,
+        angle: angle,
+        distance: distance,
+        id: '${DateTime.now().millisecondsSinceEpoch}_$i',
+      ));
     }
     
     setState(() {
@@ -197,128 +172,114 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // 主内容列
-            Column(
-              children: [
-                // 顶部标题
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: Text(
-                      '探索',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+            // 顶部标题
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  '探索',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
+              ),
+            ),
 
-                // 地球仪 - 向上移动，使用 Padding 调整位置
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Center(
-                    child: GestureDetector(
-                      onPanStart: _onPanStart,
-                      onPanUpdate: _onPanUpdate,
-                      onPanEnd: _onPanEnd,
-                      child: RepaintBoundary(
-                        child: Transform.rotate(
-                          angle: _currentRotation,
-                          child: Container(
-                            width: 280,
-                            height: 280,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Color(0xFF4A90D9),
-                                  Color(0xFF1E3A5F),
-                                ],
-                                center: Alignment(-0.3, -0.3),
-                              ),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // 地球圆形剪切
-                                ClipOval(
-                                  child: Container(
-                                    width: 280,
-                                    height: 280,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          const Color(0xFF4A90D9).withOpacity(0.8),
-                                          const Color(0xFF2E7D32).withOpacity(0.6),
-                                          const Color(0xFF1E3A5F).withOpacity(0.9),
-                                        ],
-                                      ),
-                                    ),
-                                    child: Stack(
-                                      children: _continents,
-                                    ),
-                                  ),
-                                ),
-
-                                // 球型光晕效果
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        Colors.white.withOpacity(0.15),
-                                        Colors.transparent,
-                                        Colors.black.withOpacity(0.3),
-                                      ],
-                                      center: const Alignment(-0.3, -0.3),
-                                      radius: 0.8,
-                                    ),
-                                  ),
-                                ),
-
-                                // 边框光晕
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF4A90D9).withOpacity(0.4),
-                                        blurRadius: 40,
-                                        spreadRadius: 5,
-                                      ),
+            // 地球仪 - 向上移动
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Center(
+                child: GestureDetector(
+                  onPanStart: _onPanStart,
+                  onPanUpdate: _onPanUpdate,
+                  onPanEnd: _onPanEnd,
+                  child: RepaintBoundary(
+                    child: Transform.rotate(
+                      angle: _currentRotation,
+                      child: Container(
+                        width: 280,
+                        height: 280,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Color(0xFF4A90D9),
+                              Color(0xFF1E3A5F),
+                            ],
+                            center: Alignment(-0.3, -0.3),
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // 地球背景
+                              Container(
+                                width: 280,
+                                height: 280,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      const Color(0xFF4A90D9).withOpacity(0.8),
+                                      const Color(0xFF2E7D32).withOpacity(0.6),
+                                      const Color(0xFF1E3A5F).withOpacity(0.9),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              
+                              // 大陆
+                              ..._continents,
+
+                              // 冒泡留言层 - 在地球仪内部
+                              ..._buildBubbleWidgets(),
+
+                              // 球型光晕效果（叠加在最上层）
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.1),
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.2),
+                                    ],
+                                    center: const Alignment(-0.3, -0.3),
+                                    radius: 0.8,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-            
-            // 冒泡留言层 - 在地球仪外面，不随地球转动
-            ..._buildBubbleWidgets(),
           ],
         ),
       ),
     );
   }
   
+  /// 构建冒泡留言 widgets - 位置相对于地球仪中心
   List<Widget> _buildBubbleWidgets() {
     return _bubbles.map((bubble) {
+      // 计算冒泡在地球仪上的位置
+      final x = 140 + math.cos(bubble.angle) * bubble.distance * 100;
+      final y = 140 + math.sin(bubble.angle) * bubble.distance * 100;
+      
       return Positioned(
-        left: bubble.x - 60,
-        top: bubble.y - 25,
+        left: x - 60,
+        top: y - 20,
         child: BubbleWidget(
           key: ValueKey(bubble.id),
           avatar: bubble.avatar,
@@ -427,14 +388,14 @@ class _BubbleWidgetState extends State<BubbleWidget>
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
               offset: const Offset(0, 2),
             ),
           ],
@@ -444,33 +405,31 @@ class _BubbleWidgetState extends State<BubbleWidget>
           children: [
             Text(
               widget.avatar,
-              style: const TextStyle(fontSize: 20),
+              style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.nickname,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A90D9),
-                    ),
+            const SizedBox(width: 4),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.nickname,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF4A90D9),
                   ),
-                  Text(
-                    widget.message,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF333333),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  widget.message,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF333333),
                   ),
-                ],
-              ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ],
         ),
