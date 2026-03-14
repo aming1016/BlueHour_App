@@ -118,7 +118,8 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
       final user = _mockUsers[random.nextInt(_mockUsers.length)];
       
       // 在地球周围生成位置（但不覆盖地球中心）
-      double x, y;
+      double x = 0;
+      double y = 0;
       bool validPosition = false;
       int attempts = 0;
       
