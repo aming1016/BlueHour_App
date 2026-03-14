@@ -7,16 +7,16 @@ class BubbleMessage {
   final String avatar;
   final String nickname;
   final String message;
-  final double angle; // 相对于地球仪中心的角度
-  final double distance; // 距离地球仪中心的比例 (0-1)
+  final double x; // 相对于地球仪中心的X偏移
+  final double y; // 相对于地球仪中心的Y偏移
   final String id;
   
   BubbleMessage({
     required this.avatar,
     required this.nickname,
     required this.message,
-    required this.angle,
-    required this.distance,
+    required this.x,
+    required this.y,
     required this.id,
   });
 }
@@ -38,18 +38,12 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   bool _isDragging = false;
   Timer? _resumeTimer;
   
-  // 缓存大陆 widgets，避免每帧重建
   late final List<Widget> _continents;
-  
-  // 冒泡留言相关
   final List<BubbleMessage> _bubbles = [];
   double _lastRotation = 0.0;
   static const double _rotationThreshold = 0.5;
-  
-  // 地球仪半径
   final double _globeRadius = 140;
   
-  // 模拟用户数据
   final List<Map<String, String>> _mockUsers = [
     {'avatar': '👨‍🦱', 'nickname': '旅行达人', 'msg': '故宫太美了！'},
     {'avatar': '👩‍🦰', 'nickname': '小王', 'msg': '成都火锅绝了'},
@@ -65,8 +59,6 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   void initState() {
     super.initState();
     _continents = _buildContinents2D();
-    
-    // 延迟初始化冒泡
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) _generateBubbles();
     });
@@ -103,23 +95,24 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
   void _generateBubbles() {
     final random = math.Random();
     final newBubbles = <BubbleMessage>[];
-    
     final bubbleCount = 3 + random.nextInt(3);
     
     for (int i = 0; i < bubbleCount; i++) {
       final user = _mockUsers[random.nextInt(_mockUsers.length)];
       
-      // 在地球仪表面随机位置（角度和距离）
+      // 在地球仪圆形范围内随机位置（距离中心 30%-75%）
       final angle = random.nextDouble() * 2 * math.pi;
-      // 距离中心 30%-80% 的区域（确保在地球仪内，但不在正中心）
-      final distance = 0.3 + random.nextDouble() * 0.5;
+      final distance = (0.3 + random.nextDouble() * 0.45) * _globeRadius;
+      
+      final x = math.cos(angle) * distance;
+      final y = math.sin(angle) * distance;
       
       newBubbles.add(BubbleMessage(
         avatar: user['avatar']!,
         nickname: user['nickname']!,
         message: user['msg']!,
-        angle: angle,
-        distance: distance,
+        x: x,
+        y: y,
         id: '${DateTime.now().millisecondsSinceEpoch}_$i',
       ));
     }
@@ -189,7 +182,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
               ),
             ),
 
-            // 地球仪 - 向上移动
+            // 地球仪区域 - 使用 Stack 叠加冒泡层
             Padding(
               padding: const EdgeInsets.only(top: 20),
               child: Center(
@@ -197,68 +190,84 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
                   onPanStart: _onPanStart,
                   onPanUpdate: _onPanUpdate,
                   onPanEnd: _onPanEnd,
-                  child: RepaintBoundary(
-                    child: Transform.rotate(
-                      angle: _currentRotation,
-                      child: Container(
-                        width: 280,
-                        height: 280,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Color(0xFF4A90D9),
-                              Color(0xFF1E3A5F),
-                            ],
-                            center: Alignment(-0.3, -0.3),
-                          ),
-                        ),
-                        child: ClipOval(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // 地球背景
-                              Container(
-                                width: 280,
-                                height: 280,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      const Color(0xFF4A90D9).withOpacity(0.8),
-                                      const Color(0xFF2E7D32).withOpacity(0.6),
-                                      const Color(0xFF1E3A5F).withOpacity(0.9),
-                                    ],
-                                  ),
+                  child: SizedBox(
+                    width: 280,
+                    height: 280,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // 地球仪（会转动）
+                        RepaintBoundary(
+                          child: Transform.rotate(
+                            angle: _currentRotation,
+                            child: Container(
+                              width: 280,
+                              height: 280,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Color(0xFF4A90D9),
+                                    Color(0xFF1E3A5F),
+                                  ],
+                                  center: Alignment(-0.3, -0.3),
                                 ),
                               ),
-                              
-                              // 大陆
-                              ..._continents,
-
-                              // 冒泡留言层 - 在地球仪内部
-                              ..._buildBubbleWidgets(),
-
-                              // 球型光晕效果（叠加在最上层）
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      Colors.white.withOpacity(0.1),
-                                      Colors.transparent,
-                                      Colors.black.withOpacity(0.2),
-                                    ],
-                                    center: const Alignment(-0.3, -0.3),
-                                    radius: 0.8,
-                                  ),
+                              child: ClipOval(
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // 地球背景
+                                    Container(
+                                      width: 280,
+                                      height: 280,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            const Color(0xFF4A90D9).withOpacity(0.8),
+                                            const Color(0xFF2E7D32).withOpacity(0.6),
+                                            const Color(0xFF1E3A5F).withOpacity(0.9),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    ..._continents,
+                                    // 光晕效果
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: RadialGradient(
+                                          colors: [
+                                            Colors.white.withOpacity(0.1),
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(0.2),
+                                          ],
+                                          center: const Alignment(-0.3, -0.3),
+                                          radius: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        
+                        // 冒泡层 - 不转动，但被 ClipOval 裁剪
+                        ClipOval(
+                          child: SizedBox(
+                            width: 280,
+                            height: 280,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: _buildBubbleWidgets(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -270,16 +279,13 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     );
   }
   
-  /// 构建冒泡留言 widgets - 位置相对于地球仪中心
+  /// 构建冒泡留言 widgets - 不随地球转动
   List<Widget> _buildBubbleWidgets() {
     return _bubbles.map((bubble) {
-      // 计算冒泡在地球仪上的位置
-      final x = 140 + math.cos(bubble.angle) * bubble.distance * 100;
-      final y = 140 + math.sin(bubble.angle) * bubble.distance * 100;
-      
+      // 直接相对于中心定位，不应用旋转
       return Positioned(
-        left: x - 60,
-        top: y - 20,
+        left: 140 + bubble.x - 60,
+        top: 140 + bubble.y - 20,
         child: BubbleWidget(
           key: ValueKey(bubble.id),
           avatar: bubble.avatar,
