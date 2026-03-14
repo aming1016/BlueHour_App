@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
@@ -16,34 +17,50 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   final PageController _bannerController = PageController();
   int _currentBanner = 0;
   String _selectedFilter = 'recommend';
+  Timer? _bannerTimer;
+  bool _isUserInteracting = false;
 
   @override
   void initState() {
     super.initState();
-    // Banner自动轮播
-    Future.delayed(const Duration(seconds: 3), _autoScrollBanner);
+    // Banner自动轮播 - 延迟3秒后开始
+    _startAutoScroll();
   }
 
-  void _autoScrollBanner() {
-    if (!mounted) return;
-    final banners = context.read<AppState>().banners;
-    if (banners.isEmpty) return;
-    
-    setState(() {
-      _currentBanner = (_currentBanner + 1) % banners.length;
+  void _startAutoScroll() {
+    _bannerTimer?.cancel();
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (!mounted || _isUserInteracting) return;
+      
+      final banners = context.read<AppState>().banners;
+      if (banners.isEmpty) return;
+      
+      final nextPage = (_currentBanner + 1) % banners.length;
+      
+      _bannerController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
     });
+  }
+
+  void _onUserInteraction() {
+    // 用户交互时暂停自动轮播3秒
+    _isUserInteracting = true;
+    _bannerTimer?.cancel();
     
-    _bannerController.animateToPage(
-      _currentBanner,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-    
-    Future.delayed(const Duration(seconds: 5), _autoScrollBanner);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        _isUserInteracting = false;
+        _startAutoScroll();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _bannerTimer?.cancel();
     _bannerController.dispose();
     super.dispose();
   }
@@ -179,11 +196,20 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           child: Stack(
             children: [
               // 轮播页面
-              PageView.builder(
-                controller: _bannerController,
-                onPageChanged: (index) {
-                  setState(() => _currentBanner = index);
+              NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (notification is ScrollStartNotification ||
+                      notification is ScrollUpdateNotification) {
+                    _onUserInteraction();
+                  }
+                  return false;
                 },
+                child: PageView.builder(
+                  controller: _bannerController,
+                  onPageChanged: (index) {
+                    setState(() => _currentBanner = index);
+                  },
+                  physics: const BouncingScrollPhysics(),
                 itemCount: banners.length,
                 itemBuilder: (context, index) {
                   final banner = banners[index];
@@ -278,6 +304,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     ),
                   );
                 },
+              ),
               ),
               
               // 指示器
