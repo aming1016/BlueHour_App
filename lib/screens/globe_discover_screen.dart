@@ -371,88 +371,138 @@ class _MapBackgroundPainter extends CustomPainter {
   
   @override
   void paint(Canvas canvas, Size size) {
+    // 使用更深的颜色，提高透明度
     final paint = Paint()
-      ..color = const Color(0xFF2A5A8C).withOpacity(0.3)
+      ..color = const Color(0xFF4A9AD4).withOpacity(0.6)
       ..style = PaintingStyle.fill;
+    
+    final strokePaint = Paint()
+      ..color = const Color(0xFF6ABAFF).withOpacity(0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
     
     // 绘制简化的大陆形状
     if (selectedView == 'CN' || selectedView == 'WORLD') {
-      _drawChina(canvas, size, paint);
+      _drawChina(canvas, size, paint, strokePaint);
     }
     if (selectedView == 'US' || selectedView == 'WORLD') {
-      _drawUSA(canvas, size, paint);
+      _drawUSA(canvas, size, paint, strokePaint);
     }
     if (selectedView == 'JP' || selectedView == 'WORLD') {
-      _drawJapan(canvas, size, paint);
+      _drawJapan(canvas, size, paint, strokePaint);
     }
     if (selectedView == 'WORLD') {
-      _drawEurope(canvas, size, paint);
-      _drawAustralia(canvas, size, paint);
+      _drawEurope(canvas, size, paint, strokePaint);
+      _drawAustralia(canvas, size, paint, strokePaint);
     }
   }
   
-  void _drawChina(Canvas canvas, Size size, Paint paint) {
+  void _drawChina(Canvas canvas, Size size, Paint paint, Paint strokePaint) {
     final path = Path();
-    // 简化的中国轮廓（公鸡形状）
+    // 简化的中国轮廓（公鸡形状）- 居中的位置
     final centerX = size.width * 0.5;
-    final centerY = size.height * 0.45;
-    final scale = selectedView == 'CN' ? 1.2 : 0.6;
+    final centerY = size.height * 0.5;
+    final scale = selectedView == 'CN' ? 1.0 : 0.5;
     
-    path.moveTo(centerX - 60 * scale, centerY - 80 * scale);
-    path.lineTo(centerX + 40 * scale, centerY - 90 * scale);
-    path.lineTo(centerX + 80 * scale, centerY - 40 * scale);
-    path.lineTo(centerX + 70 * scale, centerY + 20 * scale);
-    path.lineTo(centerX + 50 * scale, centerY + 60 * scale);
-    path.lineTo(centerX - 20 * scale, centerY + 50 * scale);
-    path.lineTo(centerX - 70 * scale, centerY + 10 * scale);
-    path.lineTo(centerX - 80 * scale, centerY - 40 * scale);
+    // 绘制填充
+    path.moveTo(centerX - 50 * scale, centerY - 70 * scale);
+    path.lineTo(centerX + 30 * scale, centerY - 80 * scale);
+    path.lineTo(centerX + 70 * scale, centerY - 30 * scale);
+    path.lineTo(centerX + 60 * scale, centerY + 30 * scale);
+    path.lineTo(centerX + 40 * scale, centerY + 70 * scale);
+    path.lineTo(centerX - 30 * scale, centerY + 60 * scale);
+    path.lineTo(centerX - 60 * scale, centerY + 20 * scale);
+    path.lineTo(centerX - 70 * scale, centerY - 30 * scale);
     path.close();
     
     canvas.drawPath(path, paint);
+    canvas.drawPath(path, strokePaint);
+    
+    // 添加文字标识
+    if (selectedView == 'CN') {
+      _drawLabel(canvas, centerX, centerY, '🇨🇳 中国');
+    }
   }
   
-  void _drawUSA(Canvas canvas, Size size, Paint paint) {
+  void _drawUSA(Canvas canvas, Size size, Paint paint, Paint strokePaint) {
     final path = Path();
-    final centerX = size.width * (selectedView == 'US' ? 0.5 : 0.2);
-    final centerY = size.height * (selectedView == 'US' ? 0.5 : 0.3);
-    final scale = selectedView == 'US' ? 1.0 : 0.4;
+    final centerX = size.width * (selectedView == 'US' ? 0.5 : 0.25);
+    final centerY = size.height * (selectedView == 'US' ? 0.5 : 0.35);
+    final scale = selectedView == 'US' ? 0.9 : 0.35;
     
-    path.moveTo(centerX - 50 * scale, centerY - 40 * scale);
-    path.lineTo(centerX + 50 * scale, centerY - 45 * scale);
-    path.lineTo(centerX + 60 * scale, centerY + 10 * scale);
-    path.lineTo(centerX + 40 * scale, centerY + 50 * scale);
-    path.lineTo(centerX - 40 * scale, centerY + 45 * scale);
-    path.lineTo(centerX - 60 * scale, centerY);
+    path.moveTo(centerX - 40 * scale, centerY - 30 * scale);
+    path.lineTo(centerX + 40 * scale, centerY - 35 * scale);
+    path.lineTo(centerX + 50 * scale, centerY + 5 * scale);
+    path.lineTo(centerX + 35 * scale, centerY + 40 * scale);
+    path.lineTo(centerX - 35 * scale, centerY + 35 * scale);
+    path.lineTo(centerX - 50 * scale, centerY);
     path.close();
     
     canvas.drawPath(path, paint);
-  }
-  
-  void _drawJapan(Canvas canvas, Size size, Paint paint) {
-    final centerX = size.width * (selectedView == 'JP' ? 0.5 : 0.75);
-    final centerY = size.height * (selectedView == 'JP' ? 0.5 : 0.35);
-    final scale = selectedView == 'JP' ? 1.0 : 0.3;
+    canvas.drawPath(path, strokePaint);
     
-    // 日本列岛简化
-    canvas.drawCircle(Offset(centerX, centerY - 30 * scale), 15 * scale, paint);
-    canvas.drawCircle(Offset(centerX + 10 * scale, centerY), 20 * scale, paint);
-    canvas.drawCircle(Offset(centerX - 5 * scale, centerY + 35 * scale), 18 * scale, paint);
+    if (selectedView == 'US') {
+      _drawLabel(canvas, centerX, centerY, '🇺🇸 美国');
+    }
   }
   
-  void _drawEurope(Canvas canvas, Size size, Paint paint) {
-    final centerX = size.width * 0.5;
-    final centerY = size.height * 0.25;
+  void _drawJapan(Canvas canvas, Size size, Paint paint, Paint strokePaint) {
+    final centerX = size.width * (selectedView == 'JP' ? 0.5 : 0.7);
+    final centerY = size.height * (selectedView == 'JP' ? 0.5 : 0.4);
+    final scale = selectedView == 'JP' ? 0.8 : 0.25;
+    
+    // 日本列岛简化 - 三个主要岛屿
+    canvas.drawCircle(Offset(centerX, centerY - 25 * scale), 12 * scale, paint);
+    canvas.drawCircle(Offset(centerX + 8 * scale, centerY), 16 * scale, paint);
+    canvas.drawCircle(Offset(centerX - 4 * scale, centerY + 30 * scale), 14 * scale, paint);
+    
+    canvas.drawCircle(Offset(centerX, centerY - 25 * scale), 12 * scale, strokePaint);
+    canvas.drawCircle(Offset(centerX + 8 * scale, centerY), 16 * scale, strokePaint);
+    canvas.drawCircle(Offset(centerX - 4 * scale, centerY + 30 * scale), 14 * scale, strokePaint);
+    
+    if (selectedView == 'JP') {
+      _drawLabel(canvas, centerX, centerY + 50 * scale, '🇯🇵 日本');
+    }
+  }
+  
+  void _drawEurope(Canvas canvas, Size size, Paint paint, Paint strokePaint) {
+    final centerX = size.width * 0.55;
+    final centerY = size.height * 0.3;
+    
+    canvas.drawCircle(Offset(centerX, centerY), 25, paint);
+    canvas.drawCircle(Offset(centerX - 35, centerY + 8), 16, paint);
+    canvas.drawCircle(Offset(centerX + 30, centerY - 4), 14, paint);
+    
+    canvas.drawCircle(Offset(centerX, centerY), 25, strokePaint);
+    canvas.drawCircle(Offset(centerX - 35, centerY + 8), 16, strokePaint);
+    canvas.drawCircle(Offset(centerX + 30, centerY - 4), 14, strokePaint);
+  }
+  
+  void _drawAustralia(Canvas canvas, Size size, Paint paint, Paint strokePaint) {
+    final centerX = size.width * 0.72;
+    final centerY = size.height * 0.72;
     
     canvas.drawCircle(Offset(centerX, centerY), 30, paint);
-    canvas.drawCircle(Offset(centerX - 40, centerY + 10), 20, paint);
-    canvas.drawCircle(Offset(centerX + 35, centerY - 5), 18, paint);
+    canvas.drawCircle(Offset(centerX, centerY), 30, strokePaint);
   }
   
-  void _drawAustralia(Canvas canvas, Size size, Paint paint) {
-    final centerX = size.width * 0.75;
-    final centerY = size.height * 0.75;
-    
-    canvas.drawCircle(Offset(centerX, centerY), 35, paint);
+  void _drawLabel(Canvas canvas, double x, double y, String text) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(x - textPainter.width / 2, y - textPainter.height / 2),
+    );
   }
   
   @override
