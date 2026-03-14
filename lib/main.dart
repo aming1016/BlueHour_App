@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
 import 'screens/tiktok_home_screen.dart';
-import 'screens/tiktok_discover_screen.dart';
+import 'screens/more_screen.dart';
 import 'screens/tiktok_profile_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/messages_screen.dart';

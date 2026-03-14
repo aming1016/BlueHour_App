@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'live_room_screen.dart';
-import 'tiktok_discover_screen.dart';
+import 'more_screen.dart';
 
 /// 抖音风格首页 - 全屏沉浸式直播流
 /// 上下滑动切换直播间，双击点赞，右侧交互按钮
@@ -115,7 +115,7 @@ class _TiktokHomeScreenState extends State<TiktokHomeScreen> {
                   context,
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        const TiktokDiscoverScreen(),
+                        const MoreScreen(),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       const begin = Offset(-1.0, 0.0);

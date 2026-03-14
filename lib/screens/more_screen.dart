@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// 抖音风格发现页 - 搜索+热门+分类
-class TiktokDiscoverScreen extends StatefulWidget {
-  const TiktokDiscoverScreen({super.key});
+/// More页面 - 搜索+热门+分类
+class MoreScreen extends StatefulWidget {
+  const MoreScreen({super.key});
 
   @override
-  State<TiktokDiscoverScreen> createState() => _TiktokDiscoverScreenState();
+  State<MoreScreen> createState() => _MoreScreenState();
 }
 
-class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
+class _MoreScreenState extends State<MoreScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   // 热门话题
@@ -52,7 +52,7 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // 搜索栏
+            // 搜索栏（带返回按钮）
             SliverToBoxAdapter(
               child: _buildSearchBar(),
             ),
@@ -106,12 +106,31 @@ class _TiktokDiscoverScreenState extends State<TiktokDiscoverScreen> {
     );
   }
 
-  /// 搜索栏
+  /// 搜索栏（带返回按钮）
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
+          // 返回按钮
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          
+          const SizedBox(width: 12),
+          
           // 搜索框
           Expanded(
             child: Container(
