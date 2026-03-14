@@ -2,13 +2,31 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// 国家数据
+class CountryData {
+  final String code; // 国家代码
+  final String name; // 国家名称
+  final String emoji; // 国旗emoji
+  final Color color; // 地图颜色
+  final List<Offset> points; // 简化地图点坐标
+  
+  CountryData({
+    required this.code,
+    required this.name,
+    required this.emoji,
+    required this.color,
+    required this.points,
+  });
+}
+
 /// 冒泡留言数据
 class BubbleMessage {
   final String avatar;
   final String nickname;
   final String message;
-  final double x; // 相对于地球仪中心的X偏移
-  final double y; // 相对于地球仪中心的Y偏移
+  final double x;
+  final double y;
+  final String countryCode;
   final String id;
   
   BubbleMessage({
@@ -17,11 +35,12 @@ class BubbleMessage {
     required this.message,
     required this.x,
     required this.y,
+    required this.countryCode,
     required this.id,
   });
 }
 
-/// 地球仪发现页面 - 2D地球旋转
+/// 地图发现页面 - 世界地图
 class GlobeDiscoverScreen extends StatefulWidget {
   const GlobeDiscoverScreen({super.key});
 
@@ -31,81 +50,84 @@ class GlobeDiscoverScreen extends StatefulWidget {
 
 class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _autoRotationController;
-  double _currentRotation = 0.0;
-  double _startRotation = 0.0;
-  double _startDragX = 0.0;
-  bool _isDragging = false;
-  Timer? _resumeTimer;
+  late AnimationController _pulseController;
+  Timer? _bubbleTimer;
   
-  late final List<Widget> _continents;
+  // 当前选中的国家/视图
+  String _selectedView = 'CN'; // 'CN'=中国, 'WORLD'=全球, 'US'=美国, 'JP'=日本等
+  
+  // 冒泡留言
   final List<BubbleMessage> _bubbles = [];
-  double _lastRotation = 0.0;
-  static const double _rotationThreshold = 0.5;
-  final double _globeRadius = 140;
   
+  // 模拟用户数据
   final List<Map<String, String>> _mockUsers = [
-    {'avatar': '👨‍🦱', 'nickname': '旅行达人', 'msg': '故宫太美了！'},
-    {'avatar': '👩‍🦰', 'nickname': '小王', 'msg': '成都火锅绝了'},
-    {'avatar': '🧑‍🦲', 'nickname': '摄影师', 'msg': '西湖日落超赞'},
-    {'avatar': '👱‍♀️', 'nickname': '美食家', 'msg': '西安肉夹馍好吃'},
-    {'avatar': '👨‍🦳', 'nickname': '背包客', 'msg': '长城打卡成功'},
-    {'avatar': '👩‍🦳', 'nickname': '文艺青年', 'msg': '丽江古城很浪漫'},
-    {'avatar': '🧑‍🦱', 'nickname': '探险家', 'msg': '九寨沟风景如画'},
-    {'avatar': '👱‍♂️', 'nickname': '吃货', 'msg': '广州早茶必吃'},
+    {'avatar': '👨‍🦱', 'nickname': '旅行达人', 'msg': '故宫太美了！', 'country': 'CN'},
+    {'avatar': '👩‍🦰', 'nickname': '小王', 'msg': '成都火锅绝了', 'country': 'CN'},
+    {'avatar': '🧑‍🦲', 'nickname': '摄影师', 'msg': '西湖日落超赞', 'country': 'CN'},
+    {'avatar': '👱‍♀️', 'nickname': '美食家', 'msg': '西安肉夹馍好吃', 'country': 'CN'},
+    {'avatar': '👨‍🦳', 'nickname': '背包客', 'msg': '长城打卡成功', 'country': 'CN'},
+    {'avatar': '👩‍🦳', 'nickname': '文艺青年', 'msg': '丽江古城很浪漫', 'country': 'CN'},
+    {'avatar': '🧑‍🦱', 'nickname': '探险家', 'msg': '九寨沟风景如画', 'country': 'CN'},
+    {'avatar': '👱‍♂️', 'nickname': '吃货', 'msg': '广州早茶必吃', 'country': 'CN'},
+    {'avatar': '👨‍💼', 'nickname': 'Tom', 'msg': 'NYC is amazing!', 'country': 'US'},
+    {'avatar': '👩‍💻', 'nickname': 'Yuki', 'msg': '東京タワー最高！', 'country': 'JP'},
+    {'avatar': '🧑‍🎨', 'nickname': 'Pierre', 'msg': 'Paris est magnifique', 'country': 'FR'},
+    {'avatar': '👨‍🍳', 'nickname': 'Mario', 'msg': 'Pizza in Roma!', 'country': 'IT'},
+  ];
+  
+  // 国家列表
+  final List<Map<String, dynamic>> _countries = [
+    {'code': 'CN', 'name': '中国', 'emoji': '🇨🇳'},
+    {'code': 'US', 'name': '美国', 'emoji': '🇺🇸'},
+    {'code': 'JP', 'name': '日本', 'emoji': '🇯🇵'},
+    {'code': 'FR', 'name': '法国', 'emoji': '🇫🇷'},
+    {'code': 'IT', 'name': '意大利', 'emoji': '🇮🇹'},
+    {'code': 'WORLD', 'name': '全球', 'emoji': '🌍'},
   ];
 
   @override
   void initState() {
     super.initState();
-    _continents = _buildContinents2D();
-    Future.delayed(const Duration(milliseconds: 100), () {
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    
+    // 延迟生成冒泡
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _generateBubbles();
     });
     
-    _autoRotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 30),
-    )..addListener(_onAnimationUpdate);
-    
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && !_isDragging) {
-        _autoRotationController.repeat();
-      }
+    // 定时刷新冒泡
+    _bubbleTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) _generateBubbles();
     });
-  }
-  
-  void _onAnimationUpdate() {
-    if (!mounted || _isDragging) return;
-    final newRotation = _autoRotationController.value * 2 * math.pi;
-    _checkRotationAndUpdateBubbles(newRotation);
-    setState(() {
-      _currentRotation = newRotation;
-    });
-  }
-  
-  void _checkRotationAndUpdateBubbles(double newRotation) {
-    final rotationDelta = (newRotation - _lastRotation).abs();
-    if (rotationDelta > _rotationThreshold) {
-      _lastRotation = newRotation;
-      _generateBubbles();
-    }
   }
   
   void _generateBubbles() {
     final random = math.Random();
     final newBubbles = <BubbleMessage>[];
-    final bubbleCount = 3 + random.nextInt(3);
+    
+    // 筛选当前视图的用户
+    List<Map<String, String>> filteredUsers;
+    if (_selectedView == 'WORLD') {
+      filteredUsers = _mockUsers;
+    } else {
+      filteredUsers = _mockUsers.where((u) => u['country'] == _selectedView).toList();
+    }
+    
+    if (filteredUsers.isEmpty) {
+      filteredUsers = _mockUsers.where((u) => u['country'] == 'CN').toList();
+    }
+    
+    final bubbleCount = math.min(4, filteredUsers.length);
     
     for (int i = 0; i < bubbleCount; i++) {
-      final user = _mockUsers[random.nextInt(_mockUsers.length)];
+      final user = filteredUsers[random.nextInt(filteredUsers.length)];
       
-      // 在地球仪圆形范围内随机位置（距离中心 30%-75%）
-      final angle = random.nextDouble() * 2 * math.pi;
-      final distance = (0.3 + random.nextDouble() * 0.45) * _globeRadius;
-      
-      final x = math.cos(angle) * distance;
-      final y = math.sin(angle) * distance;
+      // 在地图区域内随机位置
+      final x = 40.0 + random.nextDouble() * 200;
+      final y = 40.0 + random.nextDouble() * 160;
       
       newBubbles.add(BubbleMessage(
         avatar: user['avatar']!,
@@ -113,6 +135,7 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
         message: user['msg']!,
         x: x,
         y: y,
+        countryCode: user['country']!,
         id: '${DateTime.now().millisecondsSinceEpoch}_$i',
       ));
     }
@@ -125,153 +148,120 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
 
   @override
   void dispose() {
-    _resumeTimer?.cancel();
-    _autoRotationController.removeListener(_onAnimationUpdate);
-    _autoRotationController.dispose();
+    _bubbleTimer?.cancel();
+    _pulseController.dispose();
     super.dispose();
-  }
-
-  double _startDragY = 0.0;
-
-  void _onPanStart(DragStartDetails details) {
-    _startDragX = details.globalPosition.dx;
-    _startDragY = details.globalPosition.dy;
-    _startRotation = _currentRotation;
-    _isDragging = true;
-    _resumeTimer?.cancel();
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    final dx = details.globalPosition.dx - _startDragX;
-    final newRotation = _startRotation + dx * 0.005;
-    _checkRotationAndUpdateBubbles(newRotation);
-    setState(() {
-      _currentRotation = newRotation;
-    });
-  }
-
-  void _onPanEnd(DragEndDetails details) {
-    _isDragging = false;
-    _resumeTimer = Timer(const Duration(milliseconds: 1500), () {
-      if (mounted && !_isDragging) {
-        _autoRotationController.forward(from: _currentRotation / (2 * math.pi));
-        _autoRotationController.repeat();
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0A1628),
       body: SafeArea(
         child: Column(
           children: [
-            // 顶部标题
-            const Padding(
-              padding: EdgeInsets.all(16),
+            // 顶部标题 + 筛选器
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Text(
+                    '探索',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  // 国家筛选下拉
+                  _buildCountrySelector(),
+                ],
+              ),
+            ),
+
+            // 地图区域
+            Expanded(
               child: Center(
-                child: Text(
-                  '探索',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  height: 320,
+                  child: Stack(
+                    children: [
+                      // 地图背景
+                      _buildMapBackground(),
+                      
+                      // 地图轮廓
+                      _buildMapOutline(),
+                      
+                      // 冒泡留言
+                      ..._buildBubbleWidgets(),
+                    ],
                   ),
                 ),
               ),
             ),
-
-            // 地球仪区域 - 使用 Stack 叠加冒泡层
-            Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: Center(
-                child: GestureDetector(
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
-                  child: SizedBox(
-                    width: 280,
-                    height: 280,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // 地球仪（会转动）
-                        RepaintBoundary(
-                          child: Transform.rotate(
-                            angle: _currentRotation,
-                            child: Container(
-                              width: 280,
-                              height: 280,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    Color(0xFF4A90D9),
-                                    Color(0xFF1E3A5F),
-                                  ],
-                                  center: Alignment(-0.3, -0.3),
-                                ),
-                              ),
-                              child: ClipOval(
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // 地球背景
-                                    Container(
-                                      width: 280,
-                                      height: 280,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            const Color(0xFF4A90D9).withOpacity(0.8),
-                                            const Color(0xFF2E7D32).withOpacity(0.6),
-                                            const Color(0xFF1E3A5F).withOpacity(0.9),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    ..._continents,
-                                    // 光晕效果
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: RadialGradient(
-                                          colors: [
-                                            Colors.white.withOpacity(0.1),
-                                            Colors.transparent,
-                                            Colors.black.withOpacity(0.2),
-                                          ],
-                                          center: const Alignment(-0.3, -0.3),
-                                          radius: 0.8,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // 冒泡层 - 不转动，但被 ClipOval 裁剪
-                        ClipOval(
-                          child: SizedBox(
-                            width: 280,
-                            height: 280,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: _buildBubbleWidgets(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+            
+            // 底部统计信息
+            _buildBottomStats(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// 国家选择器
+  Widget _buildCountrySelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: PopupMenuButton<String>(
+        initialValue: _selectedView,
+        onSelected: (value) {
+          setState(() {
+            _selectedView = value;
+          });
+          _generateBubbles();
+        },
+        itemBuilder: (context) {
+          return _countries.map((country) {
+            return PopupMenuItem<String>(
+              value: country['code'],
+              child: Row(
+                children: [
+                  Text(country['emoji'], style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  Text(
+                    country['name'],
+                    style: const TextStyle(color: Colors.white),
                   ),
-                ),
+                ],
               ),
+            );
+          }).toList();
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _countries.firstWhere((c) => c['code'] == _selectedView)['emoji'],
+              style: const TextStyle(fontSize: 20),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _countries.firstWhere((c) => c['code'] == _selectedView)['name'],
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            const Icon(
+              Icons.arrow_drop_down,
+              color: Colors.white70,
             ),
           ],
         ),
@@ -279,64 +269,270 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
     );
   }
   
-  /// 构建冒泡留言 widgets - 不随地球转动
+  /// 地图背景
+  Widget _buildMapBackground() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF1A3A5C),
+            const Color(0xFF0D2137),
+          ],
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: CustomPaint(
+          painter: _MapBackgroundPainter(
+            selectedView: _selectedView,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// 地图轮廓
+  Widget _buildMapOutline() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: CustomPaint(
+        size: const Size(double.infinity, double.infinity),
+        painter: _MapOutlinePainter(
+          selectedView: _selectedView,
+        ),
+      ),
+    );
+  }
+  
+  /// 构建冒泡
   List<Widget> _buildBubbleWidgets() {
     return _bubbles.map((bubble) {
-      // 直接相对于中心定位，不应用旋转
-      return Positioned(
-        left: 140 + bubble.x - 60,
-        top: 140 + bubble.y - 20,
+      return AnimatedPositioned(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+        left: bubble.x,
+        top: bubble.y,
         child: BubbleWidget(
           key: ValueKey(bubble.id),
           avatar: bubble.avatar,
           nickname: bubble.nickname,
           message: bubble.message,
+          countryCode: bubble.countryCode,
         ),
       );
     }).toList();
   }
-
-  List<Widget> _buildContinents2D() {
-    return [
-      Positioned(top: 50, right: 30, child: _buildContinentWidget(90, 70, const Color(0xFF2E7D32))),
-      Positioned(top: 60, left: 70, child: _buildContinentWidget(50, 40, const Color(0xFF388E3C))),
-      Positioned(top: 100, left: 80, child: _buildContinentWidget(55, 85, const Color(0xFF2E7D32))),
-      Positioned(top: 40, left: 20, child: _buildContinentWidget(80, 60, const Color(0xFF388E3C))),
-      Positioned(bottom: 50, left: 60, child: _buildContinentWidget(50, 80, const Color(0xFF2E7D32))),
-      Positioned(bottom: 70, right: 50, child: _buildContinentWidget(60, 45, const Color(0xFF388E3C))),
-      Positioned(bottom: 0, left: 90, child: _buildContinentWidget(100, 40, const Color(0xFFFFFFFF).withOpacity(0.8))),
-      Positioned(top: 20, left: 60, child: _buildContinentWidget(35, 25, const Color(0xFFFFFFFF).withOpacity(0.7))),
-    ];
+  
+  /// 底部统计
+  Widget _buildBottomStats() {
+    final onlineCount = 128 + math.Random().nextInt(500);
+    final streamCount = 12 + math.Random().nextInt(30);
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem('👥', '在线用户', '$onlineCount'),
+          _buildStatItem('📹', '直播中', '$streamCount'),
+          _buildStatItem('🌟', '热门地点', '${_selectedView == 'WORLD' ? '全球' : _countries.firstWhere((c) => c['code'] == _selectedView)['name']}'),
+        ],
+      ),
+    );
   }
   
-  Widget _buildContinentWidget(double width, double height, Color color) {
-    return RepaintBoundary(
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(color: color.withOpacity(0.3), blurRadius: 8),
-          ],
+  Widget _buildStatItem(String emoji, String label, String value) {
+    return Column(
+      children: [
+        Text(
+          emoji,
+          style: const TextStyle(fontSize: 24),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.6),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// 冒泡留言组件 - 带入场动画
+/// 地图背景绘制器
+class _MapBackgroundPainter extends CustomPainter {
+  final String selectedView;
+  
+  _MapBackgroundPainter({required this.selectedView});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF2A5A8C).withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+    
+    // 绘制简化的大陆形状
+    if (selectedView == 'CN' || selectedView == 'WORLD') {
+      _drawChina(canvas, size, paint);
+    }
+    if (selectedView == 'US' || selectedView == 'WORLD') {
+      _drawUSA(canvas, size, paint);
+    }
+    if (selectedView == 'JP' || selectedView == 'WORLD') {
+      _drawJapan(canvas, size, paint);
+    }
+    if (selectedView == 'WORLD') {
+      _drawEurope(canvas, size, paint);
+      _drawAustralia(canvas, size, paint);
+    }
+  }
+  
+  void _drawChina(Canvas canvas, Size size, Paint paint) {
+    final path = Path();
+    // 简化的中国轮廓（公鸡形状）
+    final centerX = size.width * 0.5;
+    final centerY = size.height * 0.45;
+    final scale = selectedView == 'CN' ? 1.2 : 0.6;
+    
+    path.moveTo(centerX - 60 * scale, centerY - 80 * scale);
+    path.lineTo(centerX + 40 * scale, centerY - 90 * scale);
+    path.lineTo(centerX + 80 * scale, centerY - 40 * scale);
+    path.lineTo(centerX + 70 * scale, centerY + 20 * scale);
+    path.lineTo(centerX + 50 * scale, centerY + 60 * scale);
+    path.lineTo(centerX - 20 * scale, centerY + 50 * scale);
+    path.lineTo(centerX - 70 * scale, centerY + 10 * scale);
+    path.lineTo(centerX - 80 * scale, centerY - 40 * scale);
+    path.close();
+    
+    canvas.drawPath(path, paint);
+  }
+  
+  void _drawUSA(Canvas canvas, Size size, Paint paint) {
+    final path = Path();
+    final centerX = size.width * (selectedView == 'US' ? 0.5 : 0.2);
+    final centerY = size.height * (selectedView == 'US' ? 0.5 : 0.3);
+    final scale = selectedView == 'US' ? 1.0 : 0.4;
+    
+    path.moveTo(centerX - 50 * scale, centerY - 40 * scale);
+    path.lineTo(centerX + 50 * scale, centerY - 45 * scale);
+    path.lineTo(centerX + 60 * scale, centerY + 10 * scale);
+    path.lineTo(centerX + 40 * scale, centerY + 50 * scale);
+    path.lineTo(centerX - 40 * scale, centerY + 45 * scale);
+    path.lineTo(centerX - 60 * scale, centerY);
+    path.close();
+    
+    canvas.drawPath(path, paint);
+  }
+  
+  void _drawJapan(Canvas canvas, Size size, Paint paint) {
+    final centerX = size.width * (selectedView == 'JP' ? 0.5 : 0.75);
+    final centerY = size.height * (selectedView == 'JP' ? 0.5 : 0.35);
+    final scale = selectedView == 'JP' ? 1.0 : 0.3;
+    
+    // 日本列岛简化
+    canvas.drawCircle(Offset(centerX, centerY - 30 * scale), 15 * scale, paint);
+    canvas.drawCircle(Offset(centerX + 10 * scale, centerY), 20 * scale, paint);
+    canvas.drawCircle(Offset(centerX - 5 * scale, centerY + 35 * scale), 18 * scale, paint);
+  }
+  
+  void _drawEurope(Canvas canvas, Size size, Paint paint) {
+    final centerX = size.width * 0.5;
+    final centerY = size.height * 0.25;
+    
+    canvas.drawCircle(Offset(centerX, centerY), 30, paint);
+    canvas.drawCircle(Offset(centerX - 40, centerY + 10), 20, paint);
+    canvas.drawCircle(Offset(centerX + 35, centerY - 5), 18, paint);
+  }
+  
+  void _drawAustralia(Canvas canvas, Size size, Paint paint) {
+    final centerX = size.width * 0.75;
+    final centerY = size.height * 0.75;
+    
+    canvas.drawCircle(Offset(centerX, centerY), 35, paint);
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+/// 地图轮廓绘制器
+class _MapOutlinePainter extends CustomPainter {
+  final String selectedView;
+  
+  _MapOutlinePainter({required this.selectedView});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF4A9AD4).withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    
+    // 绘制网格线
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    
+    // 横向网格
+    for (int i = 1; i < 5; i++) {
+      final y = size.height * i / 5;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+    
+    // 纵向网格
+    for (int i = 1; i < 5; i++) {
+      final x = size.width * i / 5;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    
+    // 根据视图绘制边框高亮
+    if (selectedView != 'WORLD') {
+      final borderPaint = Paint()
+        ..color = const Color(0xFFFF6B35).withOpacity(0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
+      
+      final rect = Rect.fromLTWH(2, 2, size.width - 4, size.height - 4);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(18)),
+        borderPaint,
+      );
+    }
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter) => true;
+}
+
+/// 冒泡留言组件
 class BubbleWidget extends StatefulWidget {
   final String avatar;
   final String nickname;
   final String message;
+  final String countryCode;
   
   const BubbleWidget({
     super.key,
     required this.avatar,
     required this.nickname,
     required this.message,
+    required this.countryCode,
   });
 
   @override
@@ -354,7 +550,7 @@ class _BubbleWidgetState extends State<BubbleWidget>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 500),
     );
     
     _scaleAnimation = CurvedAnimation(
@@ -369,9 +565,7 @@ class _BubbleWidgetState extends State<BubbleWidget>
       ),
     );
     
-    Future.delayed(Duration(milliseconds: math.Random().nextInt(300)), () {
-      if (mounted) _controller.forward();
-    });
+    _controller.forward();
   }
 
   @override
@@ -394,14 +588,14 @@ class _BubbleWidgetState extends State<BubbleWidget>
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.2),
-              blurRadius: 4,
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -409,11 +603,8 @@ class _BubbleWidgetState extends State<BubbleWidget>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.avatar,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(width: 4),
+            Text(widget.avatar, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 6),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -421,7 +612,7 @@ class _BubbleWidgetState extends State<BubbleWidget>
                 Text(
                   widget.nickname,
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF4A90D9),
                   ),
@@ -429,7 +620,7 @@ class _BubbleWidgetState extends State<BubbleWidget>
                 Text(
                   widget.message,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: Color(0xFF333333),
                   ),
                   maxLines: 1,
