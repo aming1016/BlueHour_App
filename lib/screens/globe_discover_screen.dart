@@ -180,23 +180,52 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
               ),
             ),
 
-            // 地图区域
-            Expanded(
+            // 地图区域 - 向上移动
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
               child: Center(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
-                  height: 320,
-                  child: Stack(
-                    children: [
-                      // 地图背景
-                      _buildMapBackground(),
-                      
-                      // 地图轮廓
-                      _buildMapOutline(),
-                      
-                      // 冒泡留言
-                      ..._buildBubbleWidgets(),
-                    ],
+                  width: double.infinity,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFF1A3A5C),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      children: [
+                        // 渐变背景
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                const Color(0xFF1A3A5C),
+                                const Color(0xFF0D2137),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        // 地图大陆
+                        CustomPaint(
+                          size: Size.infinite,
+                          painter: _MapBackgroundPainter(selectedView: _selectedView),
+                        ),
+                        
+                        // 网格线和高亮边框
+                        CustomPaint(
+                          size: Size.infinite,
+                          painter: _MapOutlinePainter(selectedView: _selectedView),
+                        ),
+                        
+                        // 冒泡留言
+                        ..._buildBubbleWidgets(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -264,46 +293,6 @@ class _GlobeDiscoverScreenState extends State<GlobeDiscoverScreen>
               color: Colors.white70,
             ),
           ],
-        ),
-      ),
-    );
-  }
-  
-  /// 地图背景
-  Widget _buildMapBackground() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF1A3A5C),
-            const Color(0xFF0D2137),
-          ],
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: CustomPaint(
-          painter: _MapBackgroundPainter(
-            selectedView: _selectedView,
-          ),
-        ),
-      ),
-    );
-  }
-  
-  /// 地图轮廓
-  Widget _buildMapOutline() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: CustomPaint(
-        size: const Size(double.infinity, double.infinity),
-        painter: _MapOutlinePainter(
-          selectedView: _selectedView,
         ),
       ),
     );
