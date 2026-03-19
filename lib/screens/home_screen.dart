@@ -4,6 +4,9 @@ import '../providers/app_state.dart';
 import '../widgets/live_card.dart';
 import '../widgets/video_card.dart';
 import 'live_room_screen.dart';
+import 'search_screen.dart';
+import 'notifications_screen.dart';
+import 'video_player_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,30 +46,66 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const Spacer(),
-                    Container(
-                      width: 280,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
-                        borderRadius: BorderRadius.circular(20),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SearchScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 280,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F5F7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          children: [
+                            SizedBox(width: 12),
+                            Icon(Icons.search, color: Color(0xFF6B7280), size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Search live streams...',
+                              style: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: const Row(
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen(),
+                          ),
+                        );
+                      },
+                      child: Stack(
                         children: [
-                          SizedBox(width: 12),
-                          Icon(Icons.search, color: Color(0xFF6B7280), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Search live streams...',
-                            style: TextStyle(
-                              color: Color(0xFF9CA3AF),
-                              fontSize: 14,
+                          const Icon(Icons.notifications_outlined, color: Color(0xFF1A1A2E)),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFF6B35),
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.notifications_outlined, color: Color(0xFF1A1A2E)),
                   ],
                 ),
               ),
@@ -251,11 +290,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final video = appState.trendingVideos[index];
-                        return VideoCard(
-                          title: video.title,
-                          author: video.author,
-                          likes: video.likes,
-                          time: video.time,
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoPlayerScreen(
+                                  videoId: video.id,
+                                ),
+                              ),
+                            );
+                          },
+                          child: VideoCard(
+                            title: video.title,
+                            author: video.author,
+                            likes: video.likes,
+                            time: video.time,
+                          ),
                         );
                       },
                       childCount: appState.trendingVideos.length,
