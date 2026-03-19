@@ -1,24 +1,59 @@
+// 自动检测 Flutter SDK 路径
+def flutterSdkPath = {
+    // 1. 尝试从 local.properties 读取
+    def properties = new Properties()
+    def localPropertiesFile = file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.withInputStream { properties.load(it) }
+        def path = properties.getProperty("flutter.sdk")
+        if (path != null) return path
+    }
+    
+    // 2. 尝试从环境变量读取
+    def envPath = System.getenv("FLUTTER_ROOT")
+    if (envPath != null) return envPath
+    
+    // 3. 尝试从 flutter 命令查找
+    try {
+        def process = "flutter config --machine".execute()
+        process.waitFor()
+        def json = new groovy.json.JsonSlurper().parseText(process.text)
+        if (json?.androidSdk != null) {
+            return json.flutterSdk
+        }
+    } catch (e) {
+        // ignore
+    }
+    
+    // 4. 尝试常见安装路径
+    def commonPaths = [
+        "C:/Users/${System.getProperty('user.name')}/flutter",
+        "C:/flutter",
+        "D:/flutter",
+        "${System.getProperty('user.home')}/flutter",
+        "${System.getProperty('user.home')}/development/flutter",
+    ]
+    for (path in commonPaths) {
+        if (file("$path/bin/flutter.bat").exists() || file("$path/bin/flutter").exists()) {
+            return path
+        }
+    }
+    
+    throw new GradleException("""
+        Could not find Flutter SDK!
+        
+        Please either:
+        1. Run: flutter config --android-sdk <path>
+        2. Set FLUTTER_ROOT environment variable
+        3. Create android/local.properties with: flutter.sdk=<path>
+        
+        Your Flutter SDK is usually at: C:/Users/YOUR_NAME/flutter
+    """)
+}()
+
 pluginManagement {
-    def flutterSdkPath = {
-        def properties = new Properties()
-        def localPropertiesFile = file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.withInputStream { properties.load(it) }
-            def flutterSdkPath = properties.getProperty("flutter.sdk")
-            if (flutterSdkPath != null) {
-                return flutterSdkPath
-            }
-        }
-        // 尝试从环境变量获取
-        def envFlutterRoot = System.getenv("FLUTTER_ROOT")
-        if (envFlutterRoot != null) {
-            return envFlutterRoot
-        }
-        throw new GradleException("Could not find Flutter SDK. Please set flutter.sdk in local.properties or FLUTTER_ROOT environment variable.")
-    }()
-
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-
+    
     repositories {
         google()
         mavenCentral()
