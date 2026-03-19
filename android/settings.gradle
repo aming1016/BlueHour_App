@@ -1,70 +1,11 @@
-// 自动检测 Flutter SDK 路径
-def flutterSdkPath = {
-    // 1. 尝试从 local.properties 读取
-    def properties = new Properties()
-    def localPropertiesFile = file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.withInputStream { properties.load(it) }
-        def path = properties.getProperty("flutter.sdk")
-        if (path != null) return path
-    }
-    
-    // 2. 尝试从环境变量读取
-    def envPath = System.getenv("FLUTTER_ROOT")
-    if (envPath != null) return envPath
-    
-    // 3. 尝试从 flutter 命令查找
-    try {
-        def process = "flutter config --machine".execute()
-        process.waitFor()
-        def json = new groovy.json.JsonSlurper().parseText(process.text)
-        if (json?.androidSdk != null) {
-            return json.flutterSdk
-        }
-    } catch (e) {
-        // ignore
-    }
-    
-    // 4. 尝试常见安装路径
-    def commonPaths = [
-        "C:/Users/${System.getProperty('user.name')}/flutter",
-        "C:/flutter",
-        "D:/flutter",
-        "${System.getProperty('user.home')}/flutter",
-        "${System.getProperty('user.home')}/development/flutter",
-    ]
-    for (path in commonPaths) {
-        if (file("$path/bin/flutter.bat").exists() || file("$path/bin/flutter").exists()) {
-            return path
-        }
-    }
-    
-    throw new GradleException("""
-        Could not find Flutter SDK!
-        
-        Please either:
-        1. Run: flutter config --android-sdk <path>
-        2. Set FLUTTER_ROOT environment variable
-        3. Create android/local.properties with: flutter.sdk=<path>
-        
-        Your Flutter SDK is usually at: C:/Users/YOUR_NAME/flutter
-    """)
-}()
+include ':app'
 
-pluginManagement {
-    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-    
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+def properties = new Properties()
 
-plugins {
-    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "8.1.0" apply false
-    id "org.jetbrains.kotlin.android" version "1.8.22" apply false
-}
+assert localPropertiesFile.exists()
+localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
 
-include ":app"
+def flutterSdkPath = properties.getProperty("flutter.sdk")
+assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
