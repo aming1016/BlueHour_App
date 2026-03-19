@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
-import 'screens/home_screen.dart';
-import 'screens/discover_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/tiktok_home_screen.dart';
+import 'screens/more_screen.dart';
+import 'screens/tiktok_profile_screen.dart';
 import 'screens/wallet_screen.dart';
-import 'screens/search_screen.dart';
-import 'screens/notifications_screen.dart';
+import 'screens/messages_screen.dart';
+import 'screens/globe_discover_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 创建AppState并初始化
+  final appState = AppState();
+  await appState.initialize();
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppState(),
+    ChangeNotifierProvider.value(
+      value: appState,
       child: const TravelApp(),
     ),
   );
@@ -27,12 +33,14 @@ class TravelApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFFFF6B35),
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: Colors.black,
         fontFamily: 'Inter',
         useMaterial3: true,
+        brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFFF6B35),
           primary: const Color(0xFFFF6B35),
+          brightness: Brightness.dark,
         ),
       ),
       home: const MainScreen(),
@@ -51,18 +59,13 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const HomeScreen(),
-    const DiscoverScreen(),
-    const SizedBox(), // Placeholder for center button
-    const WalletScreen(),
-    const ProfileScreen(),
+    const TiktokHomeScreen(), // 抖音风格全屏直播流
+    const GlobeDiscoverScreen(), // 地球仪发现页（底部导航栏）
+    const MessagesScreen(), // 消息页面
+    const TiktokProfileScreen(), // 抖音风格个人中心
   ];
 
   void _onItemTapped(int index) {
-    if (index == 2) {
-      _showGoLiveModal();
-      return;
-    }
     setState(() {
       _selectedIndex = index;
     });
@@ -77,6 +80,109 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 带红点的消息导航项
+  Widget _buildMessageNavItem(int index) {
+    final isSelected = _selectedIndex == index;
+    final unreadCount = 3; // TODO: 从全局状态获取真实未读数
+    
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              Icon(
+                Icons.message,
+                size: 24,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF3B30),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '消息',
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlusButton() {
+    return GestureDetector(
+      onTap: _showGoLiveModal,
+      child: Container(
+        width: 44,
+        height: 30,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF00D2FF), Color(0xFF3A7BD5)],
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,58 +190,34 @@ class _MainScreenState extends State<MainScreen> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex == 4 ? 4 : _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFFF6B35),
-        unselectedItemColor: const Color(0xFF6B7280),
-        backgroundColor: Colors.white,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black.withOpacity(0.8),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Discover',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B35),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 28,
-              ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(Icons.home, '首页', 0),
+                _buildNavItem(Icons.explore, '发现', 1),
+                _buildPlusButton(),
+                _buildMessageNavItem(2), // 带红点的消息图标
+                _buildNavItem(Icons.person, '我', 3),
+              ],
             ),
-            label: '',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Wallet',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Me',
-          ),
-        ],
+        ),
       ),
     );
   }
